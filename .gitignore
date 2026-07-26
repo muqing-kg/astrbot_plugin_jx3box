@@ -9,6 +9,7 @@ data/
 .idea/
 .vscode/
 *.png
+!assets/item_tip/**
 !docs/**
 
 .recallloom/
