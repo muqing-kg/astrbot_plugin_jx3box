@@ -1,0 +1,12 @@
+name: astrbot_plugin_jx3box
+display_name: 剑三魔盒查询
+short_desc: 物品 tip / 成就链接 / 任务卡片 / 赤兔提醒
+desc: 查询魔盒物品详情 tip、成就链接、任务信息卡；支持关键词列表与 /1 连续选择；含赤兔抓马提醒。
+version: v1.0.0
+author: 云霄
+repo: https://github.com/muqing-kg/astrbot_plugin_jx3box
+support_platforms:
+  - aiocqhttp
+  - telegram
+  - qq_official
+astrbot_version: ">=4.0.0"

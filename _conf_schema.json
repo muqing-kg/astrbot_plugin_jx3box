@@ -1,0 +1,63 @@
+{
+  "enabled": {
+    "description": "启用插件",
+    "type": "bool",
+    "default": true,
+    "hint": "总开关"
+  },
+  "client": {
+    "description": "游戏客户端",
+    "type": "string",
+    "default": "std",
+    "hint": "通常填 std"
+  },
+  "choice_ttl_seconds": {
+    "description": "连续选择有效时间（秒）",
+    "type": "int",
+    "default": 120,
+    "hint": "发送候选列表后，/1 /2 的有效时间"
+  },
+  "horse": {
+    "description": "赤兔抓马提醒",
+    "type": "object",
+    "items": {
+      "enabled": {
+        "description": "启用赤兔提醒",
+        "type": "bool",
+        "default": true,
+        "hint": "后台监测赤兔倒计时并推送"
+      },
+      "server": {
+        "description": "区服",
+        "type": "string",
+        "default": "飞龙在天",
+        "hint": "例如：飞龙在天"
+      },
+      "target_groups": {
+        "description": "推送目标群",
+        "type": "list",
+        "items": { "type": "string" },
+        "default": [],
+        "hint": "群号，如 123456789；或完整会话 ID"
+      },
+      "pre_alert_minutes": {
+        "description": "刷新前提醒分钟数",
+        "type": "int",
+        "default": 10,
+        "hint": "锁定 ETA 后，在 ETA 前多少分钟提醒"
+      },
+      "poll_idle_seconds": {
+        "description": "未锁定时轮询间隔（秒）",
+        "type": "int",
+        "default": 300,
+        "hint": "默认 5 分钟"
+      },
+      "calibrate_before_seconds": {
+        "description": "到点前校准秒数",
+        "type": "int",
+        "default": 30,
+        "hint": "ETA 前多少秒再请求一次校准"
+      }
+    }
+  }
+}
