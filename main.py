@@ -37,9 +37,9 @@ def _norm_session_key(event: AstrMessageEvent) -> str:
 
 @register(
     "astrbot_plugin_jx3box",
-    "云霄",
+    "沐沐沐倾",
     "物品 tip / 成就链接 / 任务卡片 / 赤兔提醒",
-    "1.0.0",
+    "1.0.1",
 )
 class Jx3BoxPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig) -> None:
@@ -69,7 +69,7 @@ class Jx3BoxPlugin(Star):
         self._stop.clear()
         if (self.config.get("horse") or {}).get("enabled", True):
             self._horse_task = asyncio.create_task(self._horse_loop(), name="jx3box-horse-loop")
-        logger.info("astrbot_plugin_jx3box v1.0.0 已加载")
+        logger.info("astrbot_plugin_jx3box v1.0.1 已加载")
 
     async def terminate(self) -> None:
         self._stop.set()
@@ -188,32 +188,88 @@ class Jx3BoxPlugin(Star):
         self._save_choices(event, "quest", rows)
         yield event.plain_result(self._format_choices(rows, name_key="name", extra="任务"))
 
-    # ---------------- 连续选择 /1 /2 ... ----------------
+    # ---------------- 连续选择 /1 /2 ... 或 1 / 2 ... ----------------
 
-    @filter.regex(r"^/([1-9]|10)$")
+    @filter.event_message_type(filter.EventMessageType.ALL)
     async def cmd_choose(self, event: AstrMessageEvent):
-        """选择候选列表中的第 N 项。"""
+        """选择候选列表中的第 N 项。
+
+        兼容：
+        - /1
+        - 1
+        仅当当前会话存在有效候选列表时才接管，避免误伤普通聊天。
+        """
         text = (event.message_str or "").strip()
-        m = re.match(r"^/([1-9]|10)$", text)
+        m = re.match(r"^/?([1-9]|10)$", text)
         if not m:
             return
-        idx = int(m.group(1)) - 1
+
+        cache = None
         key = _norm_session_key(event)
-        cache = self._choice_cache.get(key)
+        candidates = [key]
+        try:
+            candidates.append(str(event.unified_msg_origin))
+        except Exception:
+            pass
+        try:
+            gid = event.get_group_id()
+            if gid:
+                candidates.extend([
+                    f"group:{gid}",
+                    f"{event.get_platform_name()}:GroupMessage:{gid}",
+                ])
+        except Exception:
+            pass
+        try:
+            uid = event.get_sender_id()
+            if uid:
+                candidates.append(f"user:{uid}")
+        except Exception:
+            pass
+        for k in candidates:
+            if k and k in self._choice_cache:
+                key = str(k)
+                cache = self._choice_cache[key]
+                break
         if not cache:
-            yield event.plain_result("当前没有可选列表，请先用 /物品、/成就 或 /任务 查询。")
+            # 没有候选时不拦截，交给其他插件/AI
             return
+
         ttl = int(self.config.get("choice_ttl_seconds", 120) or 120)
         if time.time() - float(cache.get("ts", 0)) > ttl:
             self._choice_cache.pop(key, None)
+            try:
+                event.stop_event()
+            except Exception:
+                pass
             yield event.plain_result("候选列表已过期，请重新查询。")
             return
+
+        idx = int(m.group(1)) - 1
         rows = cache.get("rows") or []
         if idx < 0 or idx >= len(rows):
+            try:
+                event.stop_event()
+            except Exception:
+                pass
             yield event.plain_result(f"序号超出范围，请输入 /1 到 /{len(rows)}")
             return
+
+        # 关键：先截断事件，防止 AngelHeart/LLM 抢走
+        try:
+            event.stop_event()
+        except Exception:
+            pass
+
         kind = cache.get("kind")
         row = rows[idx]
+        logger.info(
+            "jx3box 选择: session=%s kind=%s idx=%s name=%s",
+            key,
+            kind,
+            idx + 1,
+            row.get("Name") or row.get("name"),
+        )
         if kind == "item":
             async for r in self._send_item_detail(event, row):
                 yield r
@@ -234,8 +290,29 @@ class Jx3BoxPlugin(Star):
         return text
 
     def _save_choices(self, event: AstrMessageEvent, kind: str, rows: list[dict[str, Any]]) -> None:
-        key = _norm_session_key(event)
-        self._choice_cache[key] = {"kind": kind, "rows": rows, "ts": time.time()}
+        payload = {"kind": kind, "rows": rows, "ts": time.time()}
+        # 多 key 兜底，避免不同平台 session 取值不一致
+        keys = {_norm_session_key(event)}
+        try:
+            keys.add(str(event.unified_msg_origin))
+        except Exception:
+            pass
+        try:
+            gid = event.get_group_id()
+            if gid:
+                keys.add(f"group:{gid}")
+                keys.add(f"{event.get_platform_name()}:GroupMessage:{gid}")
+        except Exception:
+            pass
+        try:
+            uid = event.get_sender_id()
+            if uid:
+                keys.add(f"user:{uid}")
+        except Exception:
+            pass
+        for key in keys:
+            if key:
+                self._choice_cache[str(key)] = payload
 
     def _format_choices(self, rows: list[dict[str, Any]], name_key: str, extra: str) -> str:
         lines = [f"找到多个{extra}，请回复序号选择："]
@@ -246,7 +323,7 @@ class Jx3BoxPlugin(Star):
             lines.append("最多显示 10 个，没有在里面就给出更具体的名字。")
         else:
             lines.append("没有在里面就给出更具体的名字。")
-        lines.append("例如：/1")
+        lines.append("直接回复：/1  或  1")
         return "\n".join(lines)
 
     def _format_ach(self, row: dict[str, Any]) -> str:
