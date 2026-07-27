@@ -8,7 +8,7 @@ import io
 from pathlib import Path
 from typing import Any
 
-from .html_util import sanitize_css_color
+from .html_util import build_t2i_options, content_width_for_kind, crop_render_whitespace, is_http_url, sanitize_css_color
 from .item_tip import QUALITY_COLORS
 from .renderers import (
     _QUEST_TYPE_LABELS,
@@ -35,14 +35,17 @@ _LIGHT_TAG_COLORS = {
 QUEST_RENDER_OPTIONS: dict[str, Any] = {
     "full_page": True,
     "type": "png",
-    "omit_background": False,
+    "omit_background": True,
     "animations": "disabled",
+    "caret": "hide",
+    "scale": "device",
 }
 
 QUEST_CARD_TMPL = """<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"/>
+<meta name="viewport" content="width={{ viewport_width }}, initial-scale=1"/>
 <style>{{ css | safe }}</style>
 </head>
 <body>
@@ -705,6 +708,7 @@ async def build_quest_template_data(
 
     return {
         "css": _load_css(),
+        "viewport_width": content_width_for_kind("quest", quest=True),
         "qid": _escape(qid),
         "name": _escape(name),
         "difficulty": _escape(difficulty),
@@ -777,10 +781,21 @@ async def render_quest_card_html(
 ) -> str:
     """Render quest card via AstrBot Star.html_render (astrbot-t2i)."""
     data = await build_quest_template_data(quest, item_meta=item_meta, api=getattr(star, "api", None))
-    opts = dict(QUEST_RENDER_OPTIONS)
-    if options:
-        opts.update(options)
-    return await star.html_render(QUEST_CARD_TMPL, data, return_url=return_url, options=opts)
+    if "viewport_width" not in data:
+        data["viewport_width"] = content_width_for_kind("quest", quest=True)
+    width = int(data.get("viewport_width") or 860)
+    opts = build_t2i_options(width=width, base=QUEST_RENDER_OPTIONS, extra=options)
+    result = await star.html_render(QUEST_CARD_TMPL, data, return_url=return_url, options=opts)
+    if return_url or not result:
+        return result
+    local = str(result)
+    if is_http_url(local):
+        return local
+    try:
+        # light card: only crop transparent page margins, never white fill
+        return crop_render_whitespace(local, dark_panel=False, pad=0)
+    except Exception:
+        return local
 
 
 __all__ = [

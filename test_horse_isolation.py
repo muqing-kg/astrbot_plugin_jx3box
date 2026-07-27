@@ -292,6 +292,39 @@ def test_choice_prefers_user_key() -> None:
         assert not any(k == "group:9" for k in keys)
 
 
+
+
+def test_t2i_options_and_crop() -> None:
+    from astrbot_plugin_jx3box.html_util import build_t2i_options, content_width_for_kind, crop_render_whitespace
+    from astrbot_plugin_jx3box.tip_html import build_tip_template_data, TIP_RENDER_OPTIONS
+    from astrbot_plugin_jx3box.quest_html import QUEST_RENDER_OPTIONS
+    from PIL import Image
+
+    assert content_width_for_kind("equip") == 341
+    assert content_width_for_kind("quest", quest=True) == 860
+    data = build_tip_template_data({"Name": "测试", "Quality": 5, "Desc": 'text="短" font=100'})
+    assert data["viewport_width"] <= 320
+    opts = build_t2i_options(width=data["viewport_width"], base=TIP_RENDER_OPTIONS)
+    assert opts["omit_background"] is True
+    assert opts["viewport_width"] == data["viewport_width"]
+    assert opts["viewport"]["width"] == data["viewport_width"]
+    assert QUEST_RENDER_OPTIONS.get("omit_background") is True
+
+    # simulate oversized t2i canvas with tip panel in top-left
+    img = Image.new("RGBA", (800, 600), (255, 255, 255, 255))
+    for y in range(20, 160):
+        for x in range(10, 200):
+            img.putpixel((x, y), (15, 34, 34, 255))
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "wide.png"
+        img.save(path)
+        out = crop_render_whitespace(path, dark_panel=True, pad=0)
+        cropped = Image.open(out)
+        assert cropped.size[0] < 250
+        assert cropped.size[1] < 200
+        c = cropped.getpixel((0, 0))
+        assert c[0] < 40 and c[1] < 50
+
 if __name__ == "__main__":
     test_server_match()
     test_subscribe_and_isolation()
@@ -302,4 +335,5 @@ if __name__ == "__main__":
     test_cycle_resets_without_refresh()
     test_sanitize_color()
     test_choice_prefers_user_key()
+    test_t2i_options_and_crop()
     print("HORSE_COMMAND_SUB_OK")

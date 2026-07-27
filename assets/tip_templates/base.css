@@ -2,23 +2,34 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   background: transparent;
+  margin: 0;
+  padding: 0;
+  width: fit-content;
+  max-width: fit-content;
+  height: fit-content;
   font-family: "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
   -webkit-font-smoothing: none;
   text-rendering: geometricPrecision;
 }
-body { display: inline-block; }
+body {
+  display: inline-block;
+  width: fit-content;
+  max-width: fit-content;
+}
 
 #tip-root {
   display: inline-block;
+  width: fit-content;
+  max-width: 100%;
   color: #fff;
   text-shadow: 1px 1px 1px #0f2222;
-  /* official tip panel sampled ~ rgb(43,61,61) */
-  background: rgba(15, 34, 34, 0.88);
+  /* opaque panel avoids white page showing through translucent fill */
+  background: rgb(15, 34, 34);
   border: 1px solid #0f2222;
   line-height: 1;
   white-space: normal;
   word-break: break-word;
-  overflow: visible;
+  overflow: hidden;
 }
 .tip-inner { width: 100%; }
 .row {

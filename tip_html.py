@@ -8,7 +8,7 @@ import io
 from pathlib import Path
 from typing import Any
 
-from .html_util import sanitize_css_color
+from .html_util import build_t2i_options, content_width_for_kind, crop_render_whitespace, is_http_url, sanitize_css_color
 from .item_tip import (
     C_STRENGTH,
     C_WHITE,
@@ -36,12 +36,15 @@ _TIP_KINDS = (
 )
 TIP_KINDS = _TIP_KINDS
 
-# Default AstrBot html_render / t2i screenshot options for tip cards.
+# Base AstrBot html_render / t2i screenshot options for tip cards.
+# Width is injected per render via build_t2i_options (t2i default viewport is 800px).
 TIP_RENDER_OPTIONS: dict[str, Any] = {
     "full_page": True,
     "type": "png",
-    "omit_background": False,
+    "omit_background": True,
     "animations": "disabled",
+    "caret": "hide",
+    "scale": "device",
 }
 
 _FURNITURE_LABELS = {"家具", "景观", "收集", "建筑"}
@@ -64,6 +67,7 @@ ITEM_TIP_TMPL = """<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"/>
+<meta name="viewport" content="width={{ viewport_width }}, initial-scale=1"/>
 <style>{{ css | safe }}</style>
 </head>
 <body>
@@ -229,11 +233,13 @@ def build_tip_template_data(item: dict[str, Any], kind: str | None = None) -> di
             entry["arrow"] = True
         rows.append(entry)
 
+    viewport_width = content_width_for_kind(kind, tip_width)
     return {
         "css": _load_css(),
         "kind": kind,
         "has_set": bool(has_set and kind in {"equip", "weapon"}),
         "tip_width": tip_width,
+        "viewport_width": viewport_width,
         "rows": rows,
         "name": str(item.get("Name") or ""),
     }
@@ -304,11 +310,24 @@ async def render_item_tip_html(
     returns: image url or local path depending on return_url.
     """
     data = build_tip_template_data(item, kind=kind)
-    opts = dict(TIP_RENDER_OPTIONS)
-    if options:
-        opts.update(options)
+    width = int(data.get("viewport_width") or content_width_for_kind(data.get("kind") or "simple", data.get("tip_width")))
+    opts = build_t2i_options(width=width, base=TIP_RENDER_OPTIONS, extra=options)
     # AstrBot Star.html_render(tmpl, data, return_url=True, options=None)
-    return await star.html_render(ITEM_TIP_TMPL, data, return_url=return_url, options=opts)
+    result = await star.html_render(ITEM_TIP_TMPL, data, return_url=return_url, options=opts)
+    if return_url or not result:
+        return result
+    # Prefer local path so we can crop residual t2i margins.
+    local = str(result)
+    if is_http_url(local):
+        try:
+            # best-effort: if star exposes data dir / download helpers, skip; keep URL
+            return local
+        except Exception:
+            return local
+    try:
+        return crop_render_whitespace(local, dark_panel=True, pad=0)
+    except Exception:
+        return local
 
 
 def render_item_tip(item: dict[str, Any], icon_bytes: bytes | None, out_path: str | Path) -> str:
