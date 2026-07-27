@@ -65,6 +65,7 @@ class Jx3Api:
         return filter_name_contains(rows, keyword, "Name")
 
     async def get_item(self, item_id: str) -> dict[str, Any]:
+        """Fetch item detail. Raises on transport/API failure; empty dict if missing body."""
         data = await self.http.get_json(
             f"{NODE}/item/{item_id}",
             params={"client": self.client},
@@ -102,7 +103,18 @@ class Jx3Api:
         return filter_name_contains(rows or [], keyword, "name")
 
     async def get_quest(self, quest_id: int | str) -> dict[str, Any]:
-        return await self.http.get_json(f"{NODE}/quest/", params={"id": quest_id})
+        data = await self.http.get_json(f"{NODE}/quest/", params={"id": quest_id})
+        if not isinstance(data, dict):
+            return {}
+        # unwrap common envelopes: {data: {...}} / {data: {quest: {...}}}
+        payload = data.get("data") if isinstance(data.get("data"), dict) else data
+        if isinstance(payload, dict) and isinstance(payload.get("quest"), dict):
+            payload = payload["quest"]
+        if isinstance(payload, dict) and (
+            "name" in payload or "QuestID" in payload or "id" in payload or "questId" in payload
+        ):
+            return payload
+        return data if isinstance(data, dict) else {}
 
     async def fetch_horse_reports(self, server: str, page_size: int = 50) -> list[dict[str, Any]]:
         data = await self.http.get_json(

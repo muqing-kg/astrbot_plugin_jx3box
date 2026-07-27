@@ -154,6 +154,7 @@ class HorseWatcher:
     def _format_refresh(self, map_name: str) -> str:
         return (
             f"[赤兔速报] 赤兔已刷新在 {map_name or '未知'} ！\n"
+            f"区服：{self.server}\n"
             f"必备：卦文龟甲\n"
             f"赤兔刷新后再到信使处领取，有效期 8 天。"
         )
@@ -166,8 +167,8 @@ class HorseWatcher:
         st = self.state
         st.server = self.server
         cycle = self._cycle_id()
-        if st.cycle_id and st.cycle_id != cycle and st.pushed_refresh:
-            # 新周期重置
+        # 周期变化即重置，避免跨周未 pushed_refresh 时状态卡住
+        if st.cycle_id and st.cycle_id != cycle:
             st = HorseState(server=self.server, cycle_id=cycle)
             self.state = st
             self._save()

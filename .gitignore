@@ -10,6 +10,7 @@ data/
 .vscode/
 *.png
 !assets/item_tip/**
+!assets/quest_templates/**
 !docs/**
 
 .recallloom/

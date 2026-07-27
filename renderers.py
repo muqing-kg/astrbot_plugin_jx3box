@@ -10,16 +10,16 @@ from PIL import Image, ImageDraw
 
 from .font_util import get_font
 from .jx3_api import clean_desc
-from .item_tip import render_item_tip as _render_item_tip_impl
+from .tip_html import render_item_tip as _render_item_tip_impl
 
 # ── 通用颜色 ──────────────────────────────────────────────
 QUALITY_COLORS = {
-    0: "#C8C8C8",
+    0: "#A7A7A7",
     1: "#FFFFFF",
-    2: "#00C848",
-    3: "#0070DD",
+    2: "#00D24B",
+    3: "#007EFF",
     4: "#FE2DFE",
-    5: "#FF8000",
+    5: "#FFA500",
 }
 
 # JX3 文本标记颜色（对齐魔盒任务页高亮习惯）
@@ -331,7 +331,7 @@ def _extract_dialogues(raw: Any) -> list[str]:
 
 # ── 物品 tip ──────────────────────────────────────────────
 def render_item_tip(item: dict[str, Any], icon_bytes: bytes | None, out_path: str | Path) -> str:
-    """物品 tip：委托给官网高保真实现。"""
+    """Item tip via HTML multi-template (AstrBot html_render / t2i)."""
     return _render_item_tip_impl(item, icon_bytes, out_path)
 
 

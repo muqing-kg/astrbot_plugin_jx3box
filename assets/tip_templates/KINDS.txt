@@ -1,0 +1,9 @@
+equip
+weapon
+furniture
+consumable
+book
+material
+mount_pet
+appearance
+simple

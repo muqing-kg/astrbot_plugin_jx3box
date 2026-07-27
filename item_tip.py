@@ -15,26 +15,29 @@ from .jx3_api import clean_desc
 
 # 品质色（对齐官网 tip 实测）
 QUALITY_COLORS = {
-    0: "#C8C8C8",
+    # Official @jx3box/jx3box-ui assets/js/item/color.js
+    0: "#A7A7A7",
     1: "#FFFFFF",
-    2: "#00C848",
-    3: "#0070DD",
+    2: "#00D24B",
+    3: "#007EFF",
     4: "#FE2DFE",
-    5: "#FF8000",
+    5: "#FFA500",
 }
 
 # tip 配色
-C_BG = (15, 34, 34, 245)
+C_BG = (15, 34, 34, 224)  # rgba(15,34,34,0.88) from item.less
 C_BORDER = (15, 34, 34, 255)
 C_WHITE = "#FFFFFF"
-C_GREEN = "#00C848"
+C_GREEN = "#00D24B"  # .u-green
 C_GREEN2 = "#00D24B"
-C_YELLOW = "#FFFF00"
-C_ORANGE = "#FF9600"
-C_GRAY = "#ADADAD"
-C_STRENGTH = "#7EE3A3"
+C_YELLOW = "#FFFF00"  # .u-yellow
+C_ORANGE = "#FFA500"  # .u-orange / quality 5
+C_GRAY = "#ADADAD"  # .u-gray
+C_STRENGTH = "#7EE3A3"  # .u-max-strength-level
 C_DESC = "#FFFF00"
-C_EXIST = "#CFCFCF"
+C_EXIST = "#CFCFCF"  # .u-max-exist-time
+C_SOURCE_HEADER = "#FFA500"  # orange header for 获取途径
+C_SOURCE_LEAF = "#00D24B"
 
 EQUIP_USAGE = {
     1: "秘境挑战",
@@ -257,7 +260,24 @@ def _load_usage_icon(equip_usage: Any) -> Image.Image | None:
         return None
     try:
         img = Image.open(path).convert("RGBA")
-        return img.resize((15, 15), Image.Resampling.LANCZOS)
+        # official crops bake tip panel bg (~43,61,61); punch to alpha
+        px = img.load()
+        w, h = img.size
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = px[x, y]
+                if a == 0:
+                    continue
+                if abs(r - 43) <= 20 and abs(g - 61) <= 20 and abs(b - 61) <= 20:
+                    px[x, y] = (0, 0, 0, 0)
+                elif abs(r - 15) <= 14 and abs(g - 34) <= 14 and abs(b - 34) <= 14:
+                    px[x, y] = (0, 0, 0, 0)
+        # keep sharp small icon; tip row icons are ~15-16px
+        if max(img.size) > 18:
+            img = img.resize((16, 16), Image.Resampling.LANCZOS)
+        elif img.size != (16, 16) and abs(img.size[0]-16) <= 2:
+            img = img.resize((16, 16), Image.Resampling.NEAREST)
+        return img
     except Exception:
         return None
 
@@ -719,50 +739,54 @@ def _furniture_lines(item: dict[str, Any]) -> list[tuple[str, str]]:
     return rows
 
 
-def _get_source_lines(item: dict[str, Any]) -> list[tuple[str, str]]:
-    rows: list[tuple[str, str]] = []
+def _get_source_lines(item: dict[str, Any]) -> list[dict[str, Any]]:
+    """Build GetSource rows: official colors, selective brackets, original arrow."""
+    rows: list[dict[str, Any]] = []
     src = item.get("GetSource")
     if isinstance(src, list) and src:
-        rows.append(("获取途径：", C_WHITE))
+        rows.append({"text": "获取途径:", "color": C_SOURCE_HEADER, "kind": "normal"})
         for block in src:
             if isinstance(block, dict):
                 label = str(block.get("label") or "").strip()
                 children = block.get("children") or []
                 if label:
-                    rows.append((label, C_WHITE))
+                    rows.append({"text": label, "color": C_WHITE, "kind": "normal"})
                 for ch in children:
                     if isinstance(ch, dict):
                         name = str(ch.get("label") or ch.get("Name") or "").strip()
                         if not name:
                             continue
                         app = str(ch.get("app") or "").strip().lower()
-                        # 官网常见：物品子项为绿色链接名；其他来源保留前缀
+                        # Official: item leaves use quality color + [] + arrow
                         if app == "item":
-                            rows.append((name, C_GREEN))
-                        elif app == "reputation":
-                            rows.append((f"[声望]{name}", C_WHITE))
-                        elif app:
-                            rows.append((f"[{app}]{name}", C_WHITE))
+                            try:
+                                q = int(ch.get("quality") or 0)
+                            except Exception:
+                                q = 0
+                            color = QUALITY_COLORS.get(q, C_SOURCE_LEAF)
+                            text = name if (name.startswith("[") and name.endswith("]")) else f"[{name}]"
+                            rows.append({"text": text, "color": color, "kind": "source_leaf", "arrow": True})
                         else:
-                            rows.append((f"[{name}]", C_WHITE))
+                            # reputation/adventure/achievement etc: green + [] + arrow
+                            text = name if (name.startswith("[") and name.endswith("]")) else f"[{name}]"
+                            rows.append({"text": text, "color": C_SOURCE_LEAF, "kind": "source_leaf", "arrow": True})
                     else:
                         text = str(ch or "").strip()
                         if not text:
                             continue
-                        # NPC/地点子项：官网形如 [二姑(金水镇)]
-                        if text.startswith("[") and text.endswith("]"):
-                            rows.append((text, C_WHITE))
-                        else:
-                            rows.append((f"[{text}]", C_WHITE))
+                        # shop/NPC string leaves: green + [] + arrow
+                        if not (text.startswith("[") and text.endswith("]")):
+                            text = f"[{text}]"
+                        rows.append({"text": text, "color": C_SOURCE_LEAF, "kind": "source_leaf", "arrow": True})
             else:
                 text = str(block or "").strip()
                 if text:
-                    rows.append((text, C_WHITE))
+                    rows.append({"text": text, "color": C_WHITE, "kind": "normal"})
         return rows
 
     get_type = str(item.get("GetType") or "").strip()
     if get_type:
-        rows.append((f"物品来源：{get_type}", C_WHITE))
+        rows.append({"text": f"物品来源：{get_type}", "color": C_WHITE, "kind": "normal"})
     return rows
 
 
@@ -974,8 +998,8 @@ def _build_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
     if cool:
         rows.append({"text": cool, "color": C_WHITE, "kind": "normal"})
 
-    for text, color in _get_source_lines(item):
-        rows.append({"text": text, "color": color, "kind": "normal"})
+    for src_row in _get_source_lines(item):
+        rows.append(src_row)
 
     fa = item.get("furniture_attributes")
     if isinstance(fa, dict) and fa.get("limit") not in (None, ""):
@@ -1104,6 +1128,7 @@ def render_item_tip(item: dict[str, Any], icon_bytes: bytes | None, out_path: st
 
     img = Image.new("RGBA", (width, height), C_BG)
     draw = ImageDraw.Draw(img)
+    # official panel is near-solid teal; light 1px frame for separation on chat bg
     draw.rectangle((0, 0, width - 1, height - 1), outline=C_BORDER, width=1)
 
     y = pad_y

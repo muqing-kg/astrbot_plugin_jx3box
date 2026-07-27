@@ -1,0 +1,152 @@
+/* Local HTML tip templates — JX3BOX-like, multi-kind */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: transparent;
+  font-family: "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+  -webkit-font-smoothing: none;
+  text-rendering: geometricPrecision;
+}
+body { display: inline-block; }
+
+#tip-root {
+  display: inline-block;
+  color: #fff;
+  text-shadow: 1px 1px 1px #0f2222;
+  /* official tip panel sampled ~ rgb(43,61,61) */
+  background: rgba(15, 34, 34, 0.88);
+  border: 1px solid #0f2222;
+  line-height: 1;
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
+}
+.tip-inner { width: 100%; }
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+.row .left { flex: 1 1 auto; min-width: 0; }
+.row .right {
+  flex: 0 0 auto;
+  margin-left: 12px;
+  white-space: nowrap;
+  text-align: right;
+}
+.row-usage { align-items: center; }
+.row-usage .usage-icon {
+  width: 15px;
+  height: 15px;
+  margin-right: 4px;
+  flex: 0 0 15px;
+  object-fit: contain;
+}
+.row-diamond { align-items: center; }
+.row-diamond .diamond-box {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #ADADAD;
+  margin-right: 5px;
+  flex: 0 0 10px;
+  box-sizing: border-box;
+}
+.row-spacer { width: 100%; padding: 0 !important; height: 0; }
+
+/* equip / weapon */
+.kind-equip, .kind-weapon {
+  width: 341px;
+  font-size: 13.6px;
+  padding: 11px 12px;
+}
+.kind-equip .row, .kind-weapon .row {
+  min-height: 21px;
+  line-height: 21px;
+}
+.kind-equip.has-set .row, .kind-weapon.has-set .row {
+  min-height: 22px;
+  line-height: 22px;
+}
+.kind-equip .row-spacer, .kind-weapon .row-spacer {
+  height: 10px; min-height: 10px;
+}
+.kind-equip.has-set .row-spacer, .kind-weapon.has-set .row-spacer {
+  height: 14px; min-height: 14px;
+}
+
+/* furniture */
+.kind-furniture {
+  width: 345px;
+  font-size: 13.6px;
+  padding: 10px 12px;
+}
+.kind-furniture .row { min-height: 20px; line-height: 20px; }
+.kind-furniture .row-spacer { height: 10px; min-height: 10px; }
+
+/* short family */
+.kind-consumable,
+.kind-book,
+.kind-material,
+.kind-mount_pet,
+.kind-appearance,
+.kind-simple {
+  width: var(--tip-width, 220px);
+  max-width: 320px;
+  min-width: 170px;
+  font-size: 13.6px;
+  padding: 8px 12px;
+}
+.kind-consumable .row,
+.kind-book .row,
+.kind-material .row,
+.kind-mount_pet .row,
+.kind-appearance .row,
+.kind-simple .row {
+  min-height: 18px;
+  line-height: 18px;
+}
+.kind-consumable .row-spacer,
+.kind-book .row-spacer,
+.kind-material .row-spacer,
+.kind-mount_pet .row-spacer,
+.kind-appearance .row-spacer,
+.kind-simple .row-spacer {
+  height: 8px;
+  min-height: 8px;
+}
+
+
+
+.row-source {
+  align-items: center;
+}
+.row-source .source-arrow-css {
+  position: relative;
+  width: 14px;
+  height: 12px;
+  margin-right: 5px;
+  flex: 0 0 14px;
+}
+.row-source .source-arrow-css::before,
+.row-source .source-arrow-css::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid #00d24b;
+}
+.row-source .source-arrow-css::before { left: 0; }
+.row-source .source-arrow-css::after { left: 6px; }
+
+.row-source .source-arrow {
+  width: 14px;
+  height: 12px;
+  margin-right: 5px;
+  flex: 0 0 14px;
+  object-fit: contain;
+}

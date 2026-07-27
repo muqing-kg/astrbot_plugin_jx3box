@@ -1,0 +1,221 @@
+/* JX3BOX-like quest detail card (light wiki style) */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: transparent;
+  font-family: "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #2b2f36;
+}
+body { display: inline-block; }
+
+#quest-root {
+  width: 860px;
+  background: #ffffff;
+  border: 1px solid #e6e8ee;
+  border-radius: 8px;
+  padding: 22px 26px 20px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.q-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.q-title-wrap { min-width: 0; flex: 1; }
+.q-title {
+  font-size: 28px;
+  line-height: 1.25;
+  font-weight: 700;
+  color: #1f2329;
+}
+.q-id {
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #8b93a7;
+}
+.q-badge {
+  flex: 0 0 auto;
+  font-size: 13px;
+  color: #5b6475;
+  border: 1px solid #d7dce5;
+  border-radius: 16px;
+  padding: 6px 12px;
+  background: #f7f8fa;
+  white-space: nowrap;
+}
+.q-meta {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #c9893a;
+}
+.q-meta .label { color: #c9893a; }
+.q-tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.q-tag {
+  font-size: 12px;
+  color: #5b6475;
+  background: #f2f4f8;
+  border: 1px solid #e1e5ee;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.q-divider {
+  border: 0;
+  border-top: 1px dashed #e6e8ee;
+  margin: 14px 0;
+}
+
+.q-section { margin-top: 4px; }
+.q-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #3a4050;
+  margin: 4px 0 10px;
+}
+.q-section-title .tri {
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid #f0a040;
+}
+.q-body {
+  font-size: 14px;
+  line-height: 1.85;
+  color: #3c4048;
+  padding-left: 4px;
+}
+.q-body p { margin: 0 0 8px; }
+.q-body .seg { white-space: pre-wrap; }
+
+.obj-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #3c4048;
+}
+.obj-line .prefix { color: #8b93a7; min-width: 2em; }
+.item-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: max-content;
+  max-width: 100%;
+  margin: 6px 0 6px 1.5em;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.item-row .act { color: #8b93a7; flex: 0 0 auto; white-space: nowrap; }
+.item-row .icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid #e1e5ee;
+  background: #f7f8fa;
+  object-fit: contain;
+  flex: 0 0 28px;
+}
+.item-row .icon-ph {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid #e1e5ee;
+  background: linear-gradient(135deg, #f2f4f8, #e8ecf3);
+  flex: 0 0 28px;
+}
+.item-row .name { font-weight: 600; flex: 0 0 auto; white-space: nowrap; max-width: 360px; overflow: hidden; text-overflow: ellipsis; }
+.item-row .amt { color: #5b6475; flex: 0 0 auto; margin-left: 2px; white-space: nowrap; }
+
+.reward-list { padding-left: 4px; }
+.reward-list li {
+  list-style: none;
+  margin: 4px 0;
+  font-size: 14px;
+  color: #3c4048;
+}
+.reward-list li::before {
+  content: "•";
+  color: #c9893a;
+  margin-right: 8px;
+}
+
+.chain-wrap { margin-top: 8px; }
+.chain-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #8b93a7;
+  font-size: 13px;
+  margin: 8px 0 10px;
+}
+.chain-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 4px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.chain-item {
+  color: #7c3aed;
+  text-decoration: none;
+}
+.chain-item.current {
+  color: #d97706;
+  font-weight: 700;
+}
+.chain-sep { color: #c4cad6; margin: 0 2px; }
+
+.muted { color: #8b93a7; }
+
+.reward-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 28px;
+  padding: 4px 2px 8px;
+}
+.reward-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 160px;
+}
+.reward-icon, .reward-icon-ph {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid #e1e5ee;
+  background: #f7f8fa;
+  object-fit: contain;
+  flex: 0 0 40px;
+}
+.reward-title { font-size: 14px; color: #2b2f36; font-weight: 600; }
+.reward-amt { font-size: 13px; color: #5b6475; margin-top: 2px; }
+.reward-extras { padding-left: 2px; }
+.reward-extra { font-size: 13px; color: #5b6475; margin: 4px 0; }
+
+.price-part { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
+.price-val { font-size: 12px; line-height: 18px; color: #333; }
+.price-icon { width: 18px; height: 18px; object-fit: contain; vertical-align: middle; }
+.reward-icon, .reward-icon-ph { width: 42px; height: 42px; }
+
+.item-row .item-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
