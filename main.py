@@ -4,7 +4,7 @@
 - /物品 关键词
 - /成就 关键词
 - /任务 关键词
-- /1 ~ /10 连续选择
+- 多个结果直接回复数字选择；超过 10 条出图，回复 换页 翻页
 - /jx3帮助
 - /赤兔订阅 区服
 - /赤兔查询（管理员）
@@ -29,6 +29,18 @@ from .horse_subscribe import HorseSubscriptionStore
 from .horse_watcher import HorseWatcher
 from .http_client import HttpClient
 from .jx3_api import ACH_VIEW, ITEM_VIEW, Jx3Api
+from .choice_list import (
+    KIND_LABELS,
+    PAGE_SIZE,
+    TEXT_THRESHOLD,
+    choice_footer,
+    format_choice_text,
+    name_key_for_kind,
+    page_slice,
+    render_choice_list_image,
+    row_icon_id,
+    total_pages,
+)
 from .renderers import render_help_image
 from .tip_html import render_item_tip_html
 from .quest_html import render_quest_card_html, resolve_quest_item_meta
@@ -120,8 +132,10 @@ class Jx3BoxPlugin(Star):
                 "/物品 关键词  -> 物品 tip 图\n"
                 "/成就 关键词  -> 成就链接\n"
                 "/任务 关键词  -> 任务信息卡\n"
-                "多个结果时回复 /1 /2 选择\n"
-                "/赤兔订阅 区服  -> 本群订阅赤兔\n"
+                "多个结果直接回复数字；超过 10 条出图，回复 换页 翻页\n"
+                "/赤兔订阅 区服名  -> 本群订阅赤兔\n"
+                "/赤兔查询（管理员）\n"
+                "/赤兔删除 序号（管理员）\n"
                 "帮助图生成失败，请稍后重试。"
             )
 
@@ -130,15 +144,13 @@ class Jx3BoxPlugin(Star):
     @filter.command("物品")
     async def cmd_item(self, event: AstrMessageEvent):
         """查询物品，返回 tip 详情图。"""
-        if not self.config.get("enabled", True):
-            yield event.plain_result("插件已关闭。")
             return
         keyword = self._extract_arg(event, "物品")
         if not keyword:
             yield event.plain_result("用法：/物品 关键词\n例如：/物品 玄晶")
             return
         try:
-            rows = await self.api.search_items(keyword)
+            rows = await self.api.search_items(keyword, per=200)
         except Exception:
             logger.exception("search items failed")
             yield event.plain_result(_user_error("查询失败，请稍后重试。"))
@@ -146,28 +158,25 @@ class Jx3BoxPlugin(Star):
         if not rows:
             yield event.plain_result("物品名称错误")
             return
-        rows = rows[:10]
         if len(rows) == 1:
             async for r in self._send_item_detail(event, rows[0]):
                 yield r
             return
-        self._save_choices(event, "item", rows)
-        yield event.plain_result(self._format_choices(rows, name_key="Name", extra="物品"))
+        async for r in self._emit_choices(event, kind="item", rows=rows):
+            yield r
 
     # ---------------- 成就 ----------------
 
     @filter.command("成就")
     async def cmd_ach(self, event: AstrMessageEvent):
         """查询成就，返回链接。"""
-        if not self.config.get("enabled", True):
-            yield event.plain_result("插件已关闭。")
             return
         keyword = self._extract_arg(event, "成就")
         if not keyword:
             yield event.plain_result("用法：/成就 关键词\n例如：/成就 武神重临")
             return
         try:
-            rows = await self.api.search_achievements(keyword)
+            rows = await self.api.search_achievements(keyword, per=200)
         except Exception:
             logger.exception("search achievements failed")
             yield event.plain_result(_user_error("查询失败，请稍后重试。"))
@@ -175,27 +184,24 @@ class Jx3BoxPlugin(Star):
         if not rows:
             yield event.plain_result("成就名称错误")
             return
-        rows = rows[:10]
         if len(rows) == 1:
             yield event.plain_result(self._format_ach(rows[0]))
             return
-        self._save_choices(event, "achievement", rows)
-        yield event.plain_result(self._format_choices(rows, name_key="Name", extra="成就"))
+        async for r in self._emit_choices(event, kind="achievement", rows=rows):
+            yield r
 
     # ---------------- 任务 ----------------
 
     @filter.command("任务")
     async def cmd_quest(self, event: AstrMessageEvent):
         """查询任务，返回信息卡图片。"""
-        if not self.config.get("enabled", True):
-            yield event.plain_result("插件已关闭。")
             return
         keyword = self._extract_arg(event, "任务")
         if not keyword:
             yield event.plain_result("用法：/任务 关键词\n例如：/任务 茶馆问讯")
             return
         try:
-            rows = await self.api.search_quests(keyword)
+            rows = await self.api.search_quests(keyword, per=200)
         except Exception:
             logger.exception("search quests failed")
             yield event.plain_result(_user_error("查询失败，请稍后重试。"))
@@ -203,28 +209,28 @@ class Jx3BoxPlugin(Star):
         if not rows:
             yield event.plain_result("任务名称错误")
             return
-        rows = rows[:10]
         if len(rows) == 1:
             async for r in self._send_quest_detail(event, rows[0]):
                 yield r
             return
-        self._save_choices(event, "quest", rows)
-        yield event.plain_result(self._format_choices(rows, name_key="name", extra="任务"))
+        async for r in self._emit_choices(event, kind="quest", rows=rows):
+            yield r
 
-    # ---------------- 连续选择 /1 /2 ... 或 1 / 2 ... ----------------
+    # ---------------- 连续选择：数字 / 换页 ----------------
 
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def cmd_choose(self, event: AstrMessageEvent):
-        """选择候选列表中的第 N 项。
+        """选择候选或换页。
 
         兼容：
-        - /1
-        - 1
+        - 12 / /12  选择第 N 项
+        - 换页 / 下一页
         仅当当前会话存在有效候选列表时才接管，避免误伤普通聊天。
         """
         text = (event.message_str or "").strip()
-        m = re.match(r"^/?([1-9]|10)$", text)
-        if not m:
+        is_page = text in {"换页", "下一页", "/换页", "/下一页"}
+        m = re.match(r"^/?([1-9]\d{0,3})$", text)
+        if not is_page and not m:
             return
 
         cache = None
@@ -235,7 +241,6 @@ class Jx3BoxPlugin(Star):
                 cache = self._choice_cache[key]
                 break
         if not cache:
-            # 没有候选时不拦截，交给其他插件/AI
             return
 
         ttl = int(self.config.get("choice_ttl_seconds", 120) or 120)
@@ -248,23 +253,36 @@ class Jx3BoxPlugin(Star):
             yield event.plain_result("候选列表已过期，请重新查询。")
             return
 
-        idx = int(m.group(1)) - 1
-        rows = cache.get("rows") or []
-        if idx < 0 or idx >= len(rows):
-            try:
-                event.stop_event()
-            except Exception:
-                pass
-            yield event.plain_result(f"序号超出范围，请输入 /1 到 /{len(rows)}")
-            return
-
-        # 关键：先截断事件，防止 AngelHeart/LLM 抢走
         try:
             event.stop_event()
         except Exception:
             pass
 
-        kind = cache.get("kind")
+        rows = cache.get("rows") or []
+        kind = str(cache.get("kind") or "")
+        page = int(cache.get("page") or 1)
+        pages = total_pages(len(rows))
+
+        if is_page:
+            if pages <= 1 or page >= pages:
+                yield event.plain_result("已经是最后一页")
+                return
+            page += 1
+            cache["page"] = page
+            cache["ts"] = time.time()
+            # keep all mirrored keys in sync
+            for k in list(self._choice_keys(event)):
+                if k in self._choice_cache:
+                    self._choice_cache[k] = cache
+            async for r in self._send_choice_page(event, kind=kind, rows=rows, page=page):
+                yield r
+            return
+
+        idx = int(m.group(1)) - 1
+        if idx < 0 or idx >= len(rows):
+            yield event.plain_result(f"序号超出范围，请输入 1 到 {len(rows)}")
+            return
+
         row = rows[idx]
         logger.info(
             "jx3box choose: session=%s kind=%s idx=%s name=%s",
@@ -273,7 +291,6 @@ class Jx3BoxPlugin(Star):
             idx + 1,
             row.get("Name") or row.get("name"),
         )
-        # drop cache after a valid pick to avoid repeated /n re-render in TTL
         for k in list(self._choice_keys(event)):
             self._choice_cache.pop(k, None)
         self._choice_cache.pop(key, None)
@@ -354,8 +371,20 @@ class Jx3BoxPlugin(Star):
 
         return keys
 
-    def _save_choices(self, event: AstrMessageEvent, kind: str, rows: list[dict[str, Any]]) -> None:
-        payload = {"kind": kind, "rows": rows, "ts": time.time()}
+    def _save_choices(
+        self,
+        event: AstrMessageEvent,
+        kind: str,
+        rows: list[dict[str, Any]],
+        *,
+        page: int = 1,
+    ) -> None:
+        payload = {
+            "kind": kind,
+            "rows": rows,
+            "page": max(1, int(page or 1)),
+            "ts": time.time(),
+        }
         keys = self._choice_keys(event)
         # Write per-user keys first; if none, fall back to all keys (private / no uid).
         preferred = [k for k in keys if ":user:" in k or k.startswith("user:")]
@@ -364,16 +393,83 @@ class Jx3BoxPlugin(Star):
             self._choice_cache[key] = payload
 
     def _format_choices(self, rows: list[dict[str, Any]], name_key: str, extra: str) -> str:
-        lines = [f"找到多个{extra}，请回复序号选择："]
-        for i, row in enumerate(rows, 1):
-            name = str(row.get(name_key) or row.get("Name") or row.get("name") or "?")
-            lines.append(f"{i}. {name}")
-        if len(rows) >= 10:
-            lines.append("最多显示 10 个，没有在里面就给出更具体的名字。")
-        else:
-            lines.append("没有在里面就给出更具体的名字。")
-        lines.append("直接回复：/1  或  1")
-        return "\n".join(lines)
+        return format_choice_text(rows, kind_label=extra, name_key=name_key)
+
+    async def _emit_choices(self, event: AstrMessageEvent, *, kind: str, rows: list[dict[str, Any]]):
+        """2..10 text list; >=11 full image list (page 1)."""
+        label = KIND_LABELS.get(kind, "结果")
+        name_key = name_key_for_kind(kind)
+        if len(rows) <= TEXT_THRESHOLD:
+            self._save_choices(event, kind, rows, page=1)
+            yield event.plain_result(self._format_choices(rows, name_key=name_key, extra=label))
+            return
+        self._save_choices(event, kind, rows, page=1)
+        async for r in self._send_choice_page(event, kind=kind, rows=rows, page=1):
+            yield r
+
+    async def _collect_choice_icons(self, rows: list[dict[str, Any]]) -> dict[str, bytes]:
+        ids: list[str] = []
+        seen: set[str] = set()
+        for row in rows:
+            iid = row_icon_id(row)
+            if not iid or iid in seen:
+                continue
+            seen.add(iid)
+            ids.append(iid)
+        if not ids:
+            return {}
+        sem = asyncio.Semaphore(8)
+        out: dict[str, bytes] = {}
+
+        async def _one(iid: str) -> None:
+            async with sem:
+                try:
+                    raw = await self.api.get_icon_bytes(iid)
+                except Exception:
+                    raw = None
+                if raw:
+                    out[iid] = raw
+
+        await asyncio.gather(*(_one(i) for i in ids))
+        return out
+
+    async def _send_choice_page(
+        self,
+        event: AstrMessageEvent,
+        *,
+        kind: str,
+        rows: list[dict[str, Any]],
+        page: int,
+    ):
+        page_rows, page_n, pages = page_slice(rows, page)
+        out = os.path.join(
+            self._data_dir,
+            "cards",
+            "choices",
+            f"{kind}_p{page_n}_{int(time.time())}.png",
+        )
+        try:
+            icons = await self._collect_choice_icons(page_rows)
+            path = render_choice_list_image(
+                rows,
+                kind=kind,
+                page=page_n,
+                out_path=out,
+                icon_bytes_map=icons,
+            )
+            yield event.chain_result([Comp.Image.fromFileSystem(path)])
+        except Exception:
+            logger.exception("choice list image failed")
+            # text fallback for current page only
+            label = KIND_LABELS.get(kind, "结果")
+            name_key = name_key_for_kind(kind)
+            lines = [f"找到 {len(rows)} 个{label} · 第 {page_n}/{max(pages, 1)} 页（图片生成失败，文字版）"]
+            base = (page_n - 1) * PAGE_SIZE
+            for i, row in enumerate(page_rows, 1):
+                name = str(row.get(name_key) or row.get("Name") or row.get("name") or "?")
+                lines.append(f"{base + i}. {name}")
+            lines.append(choice_footer(is_last=(pages <= 1 or page_n >= pages)))
+            yield event.plain_result("\n".join(lines))
 
     def _format_ach(self, row: dict[str, Any]) -> str:
         ach_id = row.get("ID") or row.get("id")
@@ -519,8 +615,6 @@ class Jx3BoxPlugin(Star):
     @filter.command("赤兔订阅")
     async def cmd_horse_sub(self, event: AstrMessageEvent):
         """当前群订阅某个区服的赤兔提醒。"""
-        if not self.config.get("enabled", True):
-            yield event.plain_result("插件已关闭。")
             return
         if not (self.config.get("horse") or {}).get("enabled", True):
             yield event.plain_result("赤兔提醒未启用。")

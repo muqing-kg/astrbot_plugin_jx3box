@@ -155,8 +155,7 @@ class HorseWatcher:
         return (
             f"[赤兔速报] 赤兔已刷新在 {map_name or '未知'} ！\n"
             f"区服：{self.server}\n"
-            f"必备：卦文龟甲\n"
-            f"赤兔刷新后再到信使处领取，有效期 8 天。"
+            f"必备：卦文龟甲（刷新后再到信使处领取，有效期 8 天）"
         )
 
     async def _send(self, text: str) -> None:

@@ -1,10 +1,4 @@
 {
-  "enabled": {
-    "description": "启用插件",
-    "type": "bool",
-    "default": true,
-    "hint": "总开关"
-  },
   "client": {
     "description": "游戏客户端",
     "type": "string",
@@ -15,7 +9,7 @@
     "description": "连续选择有效时间（秒）",
     "type": "int",
     "default": 120,
-    "hint": "发送候选列表后，/1 /2 的有效时间"
+    "hint": "发送候选列表后，直接回复数字或换页的有效时间"
   },
   "horse": {
     "description": "赤兔抓马提醒",

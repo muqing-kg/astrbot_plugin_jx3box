@@ -8,7 +8,8 @@ from .http_client import HttpClient
 
 NODE = "https://node.jx3box.com"
 NEXT2 = "https://next2.jx3box.com"
-ICON = "https://icon.jx3box.com/icon/{icon_id}.png"
+ICON = "https://cdn.jx3box.com/icon/{icon_id}.png"
+ICON_FALLBACK = "https://icon.jx3box.com/icon/{icon_id}.png"
 ITEM_VIEW = "https://www.jx3box.com/item/view/{item_id}"
 ACH_VIEW = "https://www.jx3box.com/cj/view/{ach_id}"
 QUEST_VIEW = "https://www.jx3box.com/quest/view/{quest_id}"
@@ -129,7 +130,17 @@ class Jx3Api:
         return ((((data or {}).get("data") or {}).get("list")) or [])
 
     async def get_icon_bytes(self, icon_id: int | str) -> bytes | None:
-        try:
-            return await self.http.get_bytes(ICON.format(icon_id=icon_id))
-        except Exception:
-            return None
+        urls = (
+            ICON.format(icon_id=icon_id),
+            ICON_FALLBACK.format(icon_id=icon_id),
+        )
+        for url in urls:
+            try:
+                data = await self.http.get_bytes(url)
+                if not data:
+                    continue
+                if data[:8] == b"\x89PNG\r\n\x1a\n" or data[:2] == b"\xff\xd8":
+                    return data
+            except Exception:
+                continue
+        return None
