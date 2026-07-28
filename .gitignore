@@ -11,6 +11,7 @@ data/
 *.png
 !assets/item_tip/**
 !assets/quest_templates/**
+!assets/choice_list/**
 !docs/**
 
 .recallloom/
