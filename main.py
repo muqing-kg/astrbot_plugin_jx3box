@@ -144,7 +144,6 @@ class Jx3BoxPlugin(Star):
     @filter.command("物品")
     async def cmd_item(self, event: AstrMessageEvent):
         """查询物品，返回 tip 详情图。"""
-            return
         keyword = self._extract_arg(event, "物品")
         if not keyword:
             yield event.plain_result("用法：/物品 关键词\n例如：/物品 玄晶")
@@ -170,7 +169,6 @@ class Jx3BoxPlugin(Star):
     @filter.command("成就")
     async def cmd_ach(self, event: AstrMessageEvent):
         """查询成就，返回链接。"""
-            return
         keyword = self._extract_arg(event, "成就")
         if not keyword:
             yield event.plain_result("用法：/成就 关键词\n例如：/成就 武神重临")
@@ -195,7 +193,6 @@ class Jx3BoxPlugin(Star):
     @filter.command("任务")
     async def cmd_quest(self, event: AstrMessageEvent):
         """查询任务，返回信息卡图片。"""
-            return
         keyword = self._extract_arg(event, "任务")
         if not keyword:
             yield event.plain_result("用法：/任务 关键词\n例如：/任务 茶馆问讯")
@@ -615,7 +612,6 @@ class Jx3BoxPlugin(Star):
     @filter.command("赤兔订阅")
     async def cmd_horse_sub(self, event: AstrMessageEvent):
         """当前群订阅某个区服的赤兔提醒。"""
-            return
         if not (self.config.get("horse") or {}).get("enabled", True):
             yield event.plain_result("赤兔提醒未启用。")
             return
