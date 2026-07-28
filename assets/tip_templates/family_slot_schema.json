@@ -1,0 +1,2788 @@
+{
+  "version": 1,
+  "render_order": [
+    "title",
+    "strength",
+    "usage",
+    "bind",
+    "exist_time",
+    "type_label",
+    "furniture_meta",
+    "attr_plain",
+    "horse_attr_icon",
+    "diamonds",
+    "requires",
+    "durability",
+    "set",
+    "desc",
+    "level",
+    "recommend",
+    "appearance",
+    "cooldown",
+    "get_type",
+    "get_source",
+    "furniture_limit",
+    "wucai"
+  ],
+  "families": {
+    "appearance": {
+      "n": 55,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "strength",
+          "rate": 0.018,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxStrengthLevel > 0 only"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "exist_time",
+          "rate": 0.018,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxExistTime"
+        },
+        {
+          "id": "requires",
+          "rate": 0.745,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 0.745,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.182,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.2,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.545,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "(empty)",
+          55
+        ]
+      ]
+    },
+    "appearance_hanger": {
+      "n": 20,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "exist_time",
+          "rate": 0.3,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxExistTime"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 0.7,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "desc",
+          "rate": 0.95,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 0.7,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.4,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "腰部挂件",
+          8
+        ],
+        [
+          "背部挂件",
+          7
+        ],
+        [
+          "披风",
+          5
+        ]
+      ]
+    },
+    "bag": {
+      "n": 13,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 0.692,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 0.385,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.077,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.538,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.615,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "背包",
+          13
+        ]
+      ]
+    },
+    "book_read": {
+      "n": 24,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "佛学",
+          11
+        ],
+        [
+          "道学",
+          7
+        ],
+        [
+          "杂集",
+          6
+        ]
+      ]
+    },
+    "book_secret": {
+      "n": 126,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 0.992,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.984,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.254,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "纯阳秘笈",
+          7
+        ],
+        [
+          "天策秘笈",
+          7
+        ],
+        [
+          "少林秘笈",
+          7
+        ],
+        [
+          "七秀秘笈",
+          7
+        ],
+        [
+          "万花秘笈",
+          7
+        ],
+        [
+          "通用秘笈",
+          7
+        ],
+        [
+          "藏剑秘笈",
+          7
+        ],
+        [
+          "五毒秘笈",
+          7
+        ],
+        [
+          "唐门秘笈",
+          7
+        ],
+        [
+          "明教秘笈",
+          7
+        ],
+        [
+          "丐帮秘笈",
+          7
+        ],
+        [
+          "苍云秘笈",
+          7
+        ],
+        [
+          "长歌秘笈",
+          7
+        ],
+        [
+          "霸刀秘笈",
+          7
+        ],
+        [
+          "蓬莱秘笈",
+          7
+        ]
+      ]
+    },
+    "box": {
+      "n": 17,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.235,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.529,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "宝箱",
+          11
+        ],
+        [
+          "钥匙",
+          6
+        ]
+      ]
+    },
+    "consumable": {
+      "n": 39,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 0.872,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 0.718,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.974,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.282,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.667,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "兵鉴",
+          9
+        ],
+        [
+          "食物",
+          8
+        ],
+        [
+          "药品",
+          7
+        ],
+        [
+          "礼品",
+          7
+        ],
+        [
+          "草料",
+          6
+        ],
+        [
+          "消耗品",
+          2
+        ]
+      ]
+    },
+    "enhance": {
+      "n": 56,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 0.857,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "exist_time",
+          "rate": 0.125,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxExistTime"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 0.25,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.232,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.018,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.375,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "帽子",
+          7
+        ],
+        [
+          "上衣",
+          7
+        ],
+        [
+          "下装",
+          7
+        ],
+        [
+          "腰带",
+          7
+        ],
+        [
+          "鞋子",
+          7
+        ],
+        [
+          "护腕",
+          7
+        ],
+        [
+          "武器",
+          7
+        ],
+        [
+          "饰品",
+          7
+        ]
+      ]
+    },
+    "equip_armor": {
+      "n": 117,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "strength",
+          "rate": 0.675,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxStrengthLevel > 0 only"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "attr_plain",
+          "rate": 0.949,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "attributes[] without icon_id"
+        },
+        {
+          "id": "diamonds",
+          "rate": 0.667,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Diamonds holes / wucai hint"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.897,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "set",
+          "rate": 0.239,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Set name + siblings + set attrs"
+        },
+        {
+          "id": "desc",
+          "rate": 0.726,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "recommend",
+          "rate": 0.897,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Recommend schools"
+        },
+        {
+          "id": "appearance",
+          "rate": 0.752,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Appearance / CanExterior"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.009,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.897,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.41,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "上衣",
+          27
+        ],
+        [
+          "护腕",
+          24
+        ],
+        [
+          "下装",
+          18
+        ],
+        [
+          "鞋子",
+          17
+        ],
+        [
+          "腰带",
+          16
+        ],
+        [
+          "帽子",
+          15
+        ]
+      ]
+    },
+    "equip_extended": {
+      "n": 4,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "strength",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxStrengthLevel > 0 only"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "attr_plain",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "attributes[] without icon_id"
+        },
+        {
+          "id": "diamonds",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Diamonds holes / wucai hint"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.25,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "recommend",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Recommend schools"
+        },
+        {
+          "id": "appearance",
+          "rate": 0.25,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Appearance / CanExterior"
+        },
+        {
+          "id": "get_type",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "(empty)",
+          4
+        ]
+      ]
+    },
+    "equip_trinket": {
+      "n": 115,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "strength",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxStrengthLevel > 0 only"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "attr_plain",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "attributes[] without icon_id"
+        },
+        {
+          "id": "diamonds",
+          "rate": 0.696,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Diamonds holes / wucai hint"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "set",
+          "rate": 0.565,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Set name + siblings + set attrs"
+        },
+        {
+          "id": "desc",
+          "rate": 0.887,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "recommend",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Recommend schools"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.261,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.504,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "腰坠",
+          67
+        ],
+        [
+          "戒指",
+          34
+        ],
+        [
+          "项链",
+          14
+        ]
+      ]
+    },
+    "furniture": {
+      "n": 162,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 0.994,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "furniture_meta",
+          "rate": 0.932,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "furniture_attributes body fields"
+        },
+        {
+          "id": "requires",
+          "rate": 0.938,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.796,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 0.716,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 0.938,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.938,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.685,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        },
+        {
+          "id": "furniture_limit",
+          "rate": 0.932,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "furniture_attributes.limit"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "家具",
+          111
+        ],
+        [
+          "景观",
+          38
+        ],
+        [
+          "建筑",
+          7
+        ],
+        [
+          "收集",
+          6
+        ]
+      ]
+    },
+    "gem": {
+      "n": 15,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 0.933,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "durability",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.6,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        },
+        {
+          "id": "wucai",
+          "rate": 0.533,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "WuCaiHtml rare"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "五彩石",
+          8
+        ],
+        [
+          "五行石",
+          7
+        ]
+      ]
+    },
+    "guild_product": {
+      "n": 16,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "exist_time",
+          "rate": 0.375,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxExistTime"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 0.5,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.5,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.625,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "瑰石",
+          9
+        ],
+        [
+          "其他",
+          7
+        ]
+      ]
+    },
+    "hang_pet": {
+      "n": 12,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "requires",
+          "rate": 0.75,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 0.75,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.917,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "(empty)",
+          12
+        ]
+      ]
+    },
+    "material": {
+      "n": 5,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 0.8,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.6,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "材料",
+          5
+        ]
+      ]
+    },
+    "mount": {
+      "n": 19,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "exist_time",
+          "rate": 0.316,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxExistTime"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "attr_plain",
+          "rate": 0.895,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "attributes[] without icon_id"
+        },
+        {
+          "id": "horse_attr_icon",
+          "rate": 0.895,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "attributes[] with icon_id (atHorseAttribute)"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 0.895,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "get_type",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.053,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 17,
+      "type_labels_top": [
+        [
+          "坐骑",
+          19
+        ]
+      ]
+    },
+    "mount_gear": {
+      "n": 60,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "attr_plain",
+          "rate": 0.767,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "attributes[] without icon_id"
+        },
+        {
+          "id": "horse_attr_icon",
+          "rate": 0.033,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "attributes[] with icon_id (atHorseAttribute)"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.217,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 0.8,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 0.817,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.2,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.733,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 2,
+      "type_labels_top": [
+        [
+          "坐骑鞍饰",
+          12
+        ],
+        [
+          "坐骑胸饰",
+          12
+        ],
+        [
+          "坐骑幼崽",
+          12
+        ],
+        [
+          "坐骑头饰",
+          12
+        ],
+        [
+          "坐骑足饰",
+          12
+        ]
+      ]
+    },
+    "other": {
+      "n": 44,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 0.955,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "exist_time",
+          "rate": 0.25,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxExistTime"
+        },
+        {
+          "id": "type_label",
+          "rate": 0.932,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 0.932,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.523,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 0.409,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.159,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.364,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.432,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "其他",
+          34
+        ],
+        [
+          "垃圾",
+          7
+        ],
+        [
+          "(empty)",
+          3
+        ]
+      ]
+    },
+    "other_ext": {
+      "n": 12,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 0.417,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "requires",
+          "rate": 0.583,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.917,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.25,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.167,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "(empty)",
+          12
+        ]
+      ]
+    },
+    "quest_item": {
+      "n": 142,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 0.951,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "exist_time",
+          "rate": 0.19,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxExistTime"
+        },
+        {
+          "id": "type_label",
+          "rate": 0.225,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 0.338,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.528,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.12,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.225,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "(empty)",
+          110
+        ],
+        [
+          "其他",
+          24
+        ],
+        [
+          "未知",
+          5
+        ],
+        [
+          "草料",
+          1
+        ],
+        [
+          "杂集",
+          1
+        ],
+        [
+          "钥匙",
+          1
+        ]
+      ]
+    },
+    "recipe": {
+      "n": 29,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.966,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "缝纫配方",
+          8
+        ],
+        [
+          "烹饪配方",
+          7
+        ],
+        [
+          "医术配方",
+          7
+        ],
+        [
+          "铸造配方",
+          7
+        ]
+      ]
+    },
+    "unknown": {
+      "n": 21,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "exist_time",
+          "rate": 0.19,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxExistTime"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "requires",
+          "rate": 0.619,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.571,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.143,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.143,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "未知",
+          21
+        ]
+      ]
+    },
+    "untyped": {
+      "n": 137,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 0.978,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "exist_time",
+          "rate": 0.102,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxExistTime"
+        },
+        {
+          "id": "attr_plain",
+          "rate": 0.241,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "attributes[] without icon_id"
+        },
+        {
+          "id": "requires",
+          "rate": 0.606,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.19,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 0.854,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 0.533,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.168,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.0,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.241,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "(empty)",
+          137
+        ]
+      ]
+    },
+    "weapon": {
+      "n": 199,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "strength",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxStrengthLevel > 0 only"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 0.935,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "attr_plain",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "attributes[] without icon_id"
+        },
+        {
+          "id": "diamonds",
+          "rate": 0.995,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Diamonds holes / wucai hint"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 0.658,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "recommend",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Recommend schools"
+        },
+        {
+          "id": "appearance",
+          "rate": 0.457,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Appearance / CanExterior"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.126,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.226,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "百草卷",
+          22
+        ],
+        [
+          "千机匣",
+          20
+        ],
+        [
+          "(empty)",
+          13
+        ],
+        [
+          "重兵类",
+          12
+        ],
+        [
+          "短兵类",
+          11
+        ],
+        [
+          "魂灯",
+          10
+        ],
+        [
+          "盾刀",
+          9
+        ],
+        [
+          "链刃",
+          8
+        ],
+        [
+          "笔类",
+          8
+        ],
+        [
+          "伞",
+          8
+        ],
+        [
+          "棒",
+          8
+        ],
+        [
+          "弯刀",
+          7
+        ],
+        [
+          "双兵类",
+          7
+        ],
+        [
+          "虫笛类",
+          7
+        ],
+        [
+          "弓箭",
+          7
+        ]
+      ]
+    },
+    "weapon_ranged": {
+      "n": 20,
+      "slots": [
+        {
+          "id": "title",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Name always"
+        },
+        {
+          "id": "strength",
+          "rate": 0.7,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "MaxStrengthLevel > 0 only"
+        },
+        {
+          "id": "usage",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "EquipUsage + icon sprite"
+        },
+        {
+          "id": "bind",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "BindType / CanTrade"
+        },
+        {
+          "id": "type_label",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "TypeLabel (hidden for mount/pet hangers)"
+        },
+        {
+          "id": "attr_plain",
+          "rate": 0.8,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "attributes[] without icon_id"
+        },
+        {
+          "id": "diamonds",
+          "rate": 0.45,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Diamonds holes / wucai hint"
+        },
+        {
+          "id": "requires",
+          "rate": 1.0,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "Requires / RequireLevel / camp"
+        },
+        {
+          "id": "durability",
+          "rate": 0.95,
+          "required": true,
+          "omit_if_empty": true,
+          "note": "MaxDurability on true equip"
+        },
+        {
+          "id": "desc",
+          "rate": 0.25,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Desc rich text"
+        },
+        {
+          "id": "level",
+          "rate": 0.9,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Level quality"
+        },
+        {
+          "id": "recommend",
+          "rate": 0.5,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "Recommend schools"
+        },
+        {
+          "id": "cooldown",
+          "rate": 0.05,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "CoolDown"
+        },
+        {
+          "id": "get_type",
+          "rate": 0.9,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetType source type"
+        },
+        {
+          "id": "get_source",
+          "rate": 0.2,
+          "required": false,
+          "omit_if_empty": true,
+          "note": "GetSource tree/list"
+        }
+      ],
+      "horse_icon_items": 0,
+      "type_labels_top": [
+        [
+          "投掷",
+          10
+        ],
+        [
+          "弹药",
+          8
+        ],
+        [
+          "弓弦",
+          2
+        ]
+      ]
+    }
+  },
+  "slot_defs": [
+    {
+      "id": "title",
+      "when": "Name always"
+    },
+    {
+      "id": "strength",
+      "when": "MaxStrengthLevel > 0 only"
+    },
+    {
+      "id": "usage",
+      "when": "EquipUsage + icon sprite"
+    },
+    {
+      "id": "bind",
+      "when": "BindType / CanTrade"
+    },
+    {
+      "id": "exist_time",
+      "when": "MaxExistTime"
+    },
+    {
+      "id": "type_label",
+      "when": "TypeLabel (hidden for mount/pet hangers)"
+    },
+    {
+      "id": "furniture_meta",
+      "when": "furniture_attributes body fields"
+    },
+    {
+      "id": "attr_plain",
+      "when": "attributes[] without icon_id"
+    },
+    {
+      "id": "horse_attr_icon",
+      "when": "attributes[] with icon_id (atHorseAttribute)"
+    },
+    {
+      "id": "diamonds",
+      "when": "Diamonds holes / wucai hint"
+    },
+    {
+      "id": "requires",
+      "when": "Requires / RequireLevel / camp"
+    },
+    {
+      "id": "durability",
+      "when": "MaxDurability on true equip"
+    },
+    {
+      "id": "set",
+      "when": "Set name + siblings + set attrs"
+    },
+    {
+      "id": "desc",
+      "when": "Desc rich text"
+    },
+    {
+      "id": "level",
+      "when": "Level quality"
+    },
+    {
+      "id": "recommend",
+      "when": "Recommend schools"
+    },
+    {
+      "id": "appearance",
+      "when": "Appearance / CanExterior"
+    },
+    {
+      "id": "cooldown",
+      "when": "CoolDown"
+    },
+    {
+      "id": "get_type",
+      "when": "GetType source type"
+    },
+    {
+      "id": "get_source",
+      "when": "GetSource tree/list"
+    },
+    {
+      "id": "furniture_limit",
+      "when": "furniture_attributes.limit"
+    },
+    {
+      "id": "wucai",
+      "when": "WuCaiHtml rare"
+    }
+  ]
+}

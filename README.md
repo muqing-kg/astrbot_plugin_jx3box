@@ -74,7 +74,10 @@
 - tip_html.py / quest_html.py：物品 tip / 任务卡 HTML 渲染
 - horse_watcher.py：赤兔提醒状态机
 - horse_subscribe.py：群订阅与区服匹配
-- assets/server_list.json：内置区服名单\n- 数据目录 server_list.json：运行时刷新缓存（优先）\n- tip_html.py / quest_html.py：生产 HTML 模板（AstrBot html_render / t2i）\n- smoke_test.py：离线 HTML/API 冒烟（非 t2i 真机出图）
+- assets/server_list.json：内置区服名单
+- 数据目录 server_list.json：运行时刷新缓存（优先）
+- tip_html.py / quest_html.py：生产 HTML 模板（AstrBot html_render / t2i）
+- smoke_test.py：离线 HTML/API 冒烟（非 t2i 真机出图）
 
 
 ## 渲染说明

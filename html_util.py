@@ -79,7 +79,7 @@ def build_t2i_options(
         "viewport_width": w,
         "viewport_height": h,
         "width": w,
-        "device_scale_factor": 1,
+        "device_scale_factor": 2,
     }
     if base:
         opts.update(base)

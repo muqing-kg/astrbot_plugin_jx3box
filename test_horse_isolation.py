@@ -325,6 +325,261 @@ def test_t2i_options_and_crop() -> None:
         c = cropped.getpixel((0, 0))
         assert c[0] < 40 and c[1] < 50
 
+
+
+def test_fengyu_tip_rows() -> None:
+    """风语颂歌: hang-pet trinket must not use equip/挂宠/精炼 0."""
+    import json
+    from astrbot_plugin_jx3box.item_tip import _build_rows, is_true_equip, _type_label
+    from astrbot_plugin_jx3box.tip_html import select_tip_kind, build_tip_template_data
+    from astrbot_plugin_jx3box.html_util import build_t2i_options
+    from astrbot_plugin_jx3box.tip_html import TIP_RENDER_OPTIONS
+
+    sample = ROOT / "data" / "samples" / "fengyu_songge.json"
+    item = json.loads(sample.read_text(encoding="utf-8"))
+    assert _type_label(item) == "挂宠"
+    assert is_true_equip(item) is False
+    assert select_tip_kind(item) == "mount_pet"
+    rows = _build_rows(item)
+    texts = [str(r.get("text") or "") for r in rows]
+    kinds = [str(r.get("kind") or "") for r in rows]
+    assert "挂宠" not in texts
+    assert not any("精炼" in t for t in texts)
+    assert "获取途径:" in texts
+    assert "物品" in texts
+    assert kinds.count("source_group") >= 1
+    assert kinds.count("source_leaf") >= 2
+    # leaves keep [] for item app
+    assert any(t.startswith("[") and t.endswith("]") for t, k in zip(texts, kinds) if k == "source_leaf")
+    data = build_tip_template_data(item)
+    assert data["kind"] == "mount_pet"
+    assert data["viewport_width"] <= 320
+    # no fat svg arrow
+    for r in data["rows"]:
+        if r.get("kind") == "source_leaf":
+            assert not r.get("icon_uri")
+    opts = build_t2i_options(width=data["viewport_width"], base=TIP_RENDER_OPTIONS)
+    assert opts["device_scale_factor"] == 2
+    assert opts["omit_background"] is True
+
+
+def test_strength_zero_hidden() -> None:
+    from astrbot_plugin_jx3box.item_tip import _build_rows
+    item = {"Name": "测试", "Quality": 1, "IsEquip": True, "MaxStrengthLevel": 0, "Source": "armor"}
+    texts = [str(r.get("text") or "") for r in _build_rows(item)]
+    assert not any("精炼" in t for t in texts)
+    item2 = {"Name": "真装备", "Quality": 4, "IsEquip": True, "MaxStrengthLevel": 6, "Source": "armor", "attributes": [{"label": "攻击提高10", "color": "white"}]}
+    texts2 = [str(r.get("text") or "") + "|" + str(r.get("right") or "") for r in _build_rows(item2)]
+    assert any("精炼" in t for t in texts2)
+
+
+
+def test_horse_attr_icon_rows() -> None:
+    """Mount skill rows keep icon + green title + white body; no refine 0 spam."""
+    import json
+    from astrbot_plugin_jx3box.item_tip import _build_rows
+    from astrbot_plugin_jx3box.tip_html import build_tip_template_data, select_tip_kind
+
+    items = json.loads((ROOT / "data" / "samples" / "item_diverse_details_v2.json").read_text(encoding="utf-8"))
+    item = next(it for it in items if str(it.get("id") or "") == "8_38705" or it.get("Name") == "谛听")
+    rows = _build_rows(item)
+    horse_rows = [r for r in rows if r.get("kind") == "horse_attr"]
+    assert len(horse_rows) >= 2
+    for hr in horse_rows:
+        assert hr.get("icon_id")
+        assert str(hr.get("icon_url") or "").startswith("https://icon.jx3box.com/icon/")
+        assert hr.get("title")
+        assert hr.get("body")
+        assert str(hr.get("color")).upper() in {"#00D24B", "#00D24B"}
+    texts = [str(r.get("text") or "") + "|" + str(r.get("right") or "") for r in rows]
+    assert not any("精炼等级" in t and "0 / 0" in t for t in texts)
+    assert not any(t.split("|", 1)[0].startswith("精饲") and r.get("kind") == "attr" for t, r in zip(texts, rows))
+
+    data = build_tip_template_data(item)
+    assert select_tip_kind(item) == "mount_pet"
+    assert data["kind"] == "mount_pet"
+    html_rows = [r for r in data["rows"] if r.get("kind") == "horse_attr"]
+    assert len(html_rows) >= 2
+    for hr in html_rows:
+        assert "icon.jx3box.com/icon/" in str(hr.get("icon_uri") or "")
+        assert hr.get("title")
+        assert hr.get("body")
+
+
+
+
+def test_tip_family_slot_gate() -> None:
+    """Family schema gates slots; empty slots omitted; mount keeps horse icons."""
+    import json
+    from astrbot_plugin_jx3box.item_tip import _build_rows, tip_family_of, _slots_for_family
+
+    items = json.loads((ROOT / "data" / "samples" / "item_diverse_details_v2.json").read_text(encoding="utf-8"))
+    di = next(it for it in items if it.get("Name") == "谛听")
+    assert tip_family_of(di) == "mount"
+    allowed = _slots_for_family("mount")
+    assert "horse_attr_icon" in allowed
+    rows = _build_rows(di)
+    slots = {r.get("slot") for r in rows if r.get("slot")}
+    assert slots <= set(allowed) | {"title"}
+    assert any(r.get("kind") == "horse_attr" for r in rows)
+    assert not any(str(r.get("right") or "").startswith("精炼") and "0 / 0" in str(r.get("right") or "") for r in rows)
+
+    fengyu = json.loads((ROOT / "data" / "samples" / "fengyu_songge.json").read_text(encoding="utf-8"))
+    assert tip_family_of(fengyu) == "hang_pet"
+    hang_allowed = _slots_for_family("hang_pet")
+    assert "type_label" not in hang_allowed
+    hang_rows = _build_rows(fengyu)
+    hang_texts = [str(r.get("text") or "") for r in hang_rows]
+    assert "挂宠" not in hang_texts
+    assert not any(r.get("kind") == "horse_attr" for r in hang_rows)
+    assert all((r.get("slot") in hang_allowed or r.get("slot") in {None, "title"} or r.get("kind") == "spacer") for r in hang_rows)
+
+
+
+
+def test_quest_branch_and_reward_escape() -> None:
+    """HTML quest card keeps branch data, deduplicates it, and escapes reward text."""
+    import asyncio
+    import json
+    from astrbot_plugin_jx3box.quest_html import build_quest_template_data
+
+    quests = json.loads((ROOT / "data" / "samples" / "quest_details_diverse.json").read_text(encoding="utf-8"))
+    quest = next(q for q in quests if str(q.get("id")) == "31416")
+    quest = dict(quest)
+    quest["rewards"] = [
+        {"type": "achievement", "name": "<b>测试成就</b>", "count": 1},
+        {"type": "skill", "name": "<script>bad</script>", "count": 1},
+        {"type": "custom<x>", "count": "<i>1</i>"},
+    ]
+    data = asyncio.run(build_quest_template_data(quest, item_meta={}, api=None))
+    assert [b["name"] for b in data["branch_items"]] == ["候夜入营"]
+    assert data["chain_items"]
+    titles = [str(r.get("title") or "") for r in data["reward_cards"]]
+    assert any("&lt;b&gt;" in title for title in titles)
+    assert any("&lt;script&gt;" in title for title in titles)
+    assert not any("<script>" in title for title in titles)
+
+
+def test_quest_item_meta_concurrency() -> None:
+    """Quest item metadata requests overlap instead of serializing."""
+    import asyncio
+    from astrbot_plugin_jx3box.quest_html import resolve_quest_item_meta
+
+    class FakeApi:
+        def __init__(self) -> None:
+            self.active = 0
+            self.max_active = 0
+
+        async def get_item(self, iid):
+            self.active += 1
+            self.max_active = max(self.max_active, self.active)
+            await asyncio.sleep(0.01)
+            self.active -= 1
+            return {"Name": f"item-{iid}", "Quality": 2}
+
+    api = FakeApi()
+    quest = {"needItems": [{"id": str(i)} for i in range(1, 7)]}
+    meta = asyncio.run(resolve_quest_item_meta(api, quest))
+    assert len(meta) == 6
+    assert api.max_active > 1
+    assert api.max_active <= 4
+
+
+def test_get_type_fallback_when_source_tree_gated(monkeypatch) -> None:
+    """If family gates GetSource but allows GetType, source text still renders."""
+    from astrbot_plugin_jx3box import item_tip
+
+    monkeypatch.setattr(
+        item_tip,
+        "_FAMILY_SLOT_CACHE",
+        {"equip_extended": frozenset({"title", "get_type"})},
+    )
+
+    item = {
+        "Name": "扩展装备来源测试",
+        "AucGenre": 26,
+        "AucSubType": 1,
+        "GetType": "活动",
+        "GetSource": [{"label": "物品", "children": [{"label": "某物", "app": "item"}]}],
+    }
+    rows = item_tip._build_rows(item)
+    texts = [str(r.get("text") or "") for r in rows]
+    assert "物品来源：活动" in texts
+    assert "获取途径:" not in texts
+
+
+def test_get_type_fallback_when_source_tree_is_empty() -> None:
+    """An empty GetSource payload must not hide a valid GetType line."""
+    from astrbot_plugin_jx3box.item_tip import _build_rows
+
+    item = {
+        "Name": "空来源树测试",
+        "AucGenre": 5,
+        "GetType": "活动",
+        "GetSource": [{}, {"label": "", "children": []}],
+    }
+    texts = [str(r.get("text") or "") for r in _build_rows(item)]
+    assert "物品来源：活动" in texts
+    assert "获取途径:" not in texts
+
+
+def test_quest_dynamic_amounts_are_escaped() -> None:
+    """Quest item/reward amounts are text, never executable HTML."""
+    import asyncio
+    from astrbot_plugin_jx3box.quest_html import build_quest_html
+
+    quest = {
+        "id": 1,
+        "name": "数量转义测试",
+        "needItems": [{"id": "1", "amount": '<img src=x onerror="bad()">'}],
+        "rewards": [
+            {"type": "train", "count": "<b>9</b>"},
+            {"type": "item_group", "items": [{"id": "2", "amount": "<i>7</i>"}]},
+        ],
+    }
+    html = asyncio.run(
+        build_quest_html(
+            quest,
+            item_meta={"1": {"name": "目标"}, "2": {"name": "奖励"}},
+        )
+    )
+    assert '<img src=x onerror="bad()">' not in html
+    assert "<b>9</b>" not in html
+    assert "<i>7</i>" not in html
+    assert "&lt;img" in html
+    assert "&lt;b&gt;9&lt;/b&gt;" in html
+    assert "&lt;i&gt;7&lt;/i&gt;" in html
+
+
+def test_quest_item_meta_does_not_guess_bare_id_prefix() -> None:
+    """A bare quest item id must not accept an unrelated prefixed detail."""
+    import asyncio
+    from astrbot_plugin_jx3box.quest_html import resolve_quest_item_meta
+
+    class FakeApi:
+        async def get_item(self, iid):
+            if str(iid) == "5_123":
+                return {"Name": "错误候选", "Quality": 4}
+            return None
+
+        async def search_items(self, keyword, per=10):
+            return []
+
+    meta = asyncio.run(resolve_quest_item_meta(FakeApi(), {"needItems": [{"id": "123"}]}))
+    assert meta["123"]["name"] == "123"
+
+
+def test_schema_keeps_safe_source_slots_for_sparse_families() -> None:
+    """Sparse samples must not permanently suppress ordinary source fields."""
+    from astrbot_plugin_jx3box.item_tip import _slots_for_family
+
+    for family in ("recipe", "book_read"):
+        allowed = _slots_for_family(family)
+        assert "get_source" in allowed
+        assert "get_type" in allowed
+
+
+
 if __name__ == "__main__":
     test_server_match()
     test_subscribe_and_isolation()
@@ -336,4 +591,15 @@ if __name__ == "__main__":
     test_sanitize_color()
     test_choice_prefers_user_key()
     test_t2i_options_and_crop()
+    test_fengyu_tip_rows()
+    test_strength_zero_hidden()
+    test_horse_attr_icon_rows()
+    test_tip_family_slot_gate()
+    test_quest_branch_and_reward_escape()
+    test_quest_item_meta_concurrency()
+    test_get_type_fallback_when_source_tree_gated()
+    test_get_type_fallback_when_source_tree_is_empty()
+    test_quest_dynamic_amounts_are_escaped()
+    test_quest_item_meta_does_not_guess_bare_id_prefix()
+    test_schema_keeps_safe_source_slots_for_sparse_families()
     print("HORSE_COMMAND_SUB_OK")

@@ -2,6 +2,7 @@
 """Quest detail HTML multi-template for AstrBot html_render / astrbot-t2i."""
 from __future__ import annotations
 
+import asyncio
 import base64
 import html as html_lib
 import io
@@ -139,8 +140,9 @@ QUEST_CARD_TMPL = """<!DOCTYPE html>
   <hr class="q-divider"/>
   {% endif %}
 
-  {% if chain_items %}
+  {% if chain_items or branch_items %}
   <section class="q-section chain-wrap">
+    {% if chain_items %}
     <div class="chain-label">任务链</div>
     <div class="chain-line">
       {% for c in chain_items %}
@@ -148,6 +150,16 @@ QUEST_CARD_TMPL = """<!DOCTYPE html>
         <span class="chain-item{% if c.current %} current{% endif %}">[{{ c.name }}]</span>
       {% endfor %}
     </div>
+    {% endif %}
+    {% if branch_items %}
+    <div class="chain-label branch-label">任务分支</div>
+    <div class="chain-line branch-line">
+      {% for c in branch_items %}
+        {% if not loop.first %}<span class="chain-sep">»</span>{% endif %}
+        <span class="chain-item{% if c.current %} current{% endif %}">[{{ c.name }}]</span>
+      {% endfor %}
+    </div>
+    {% endif %}
   </section>
   {% endif %}
 </div>
@@ -320,18 +332,6 @@ async def resolve_quest_item_meta(api: Any, quest: dict[str, Any]) -> dict[str, 
             detail = await api.get_item(iid)
         except Exception:
             detail = None
-        # try bare numeric id with common prefixes
-        if not detail:
-            bare = iid.split("_")[-1] if "_" in iid else iid
-            for cand in [f"5_{bare}", f"8_{bare}", f"6_{bare}", f"7_{bare}", bare]:
-                if cand == iid:
-                    continue
-                try:
-                    detail = await api.get_item(cand)
-                except Exception:
-                    detail = None
-                if detail:
-                    break
         # search fallback
         if not detail and hasattr(api, "search_items"):
             try:
@@ -379,8 +379,19 @@ async def resolve_quest_item_meta(api: Any, quest: dict[str, Any]) -> dict[str, 
             "icon_uri": icon_uri,
         }
 
-    for iid in collect_quest_item_ids(quest):
-        meta[iid] = await _load_one(str(iid))
+    item_ids = [str(iid) for iid in collect_quest_item_ids(quest)]
+    if not item_ids:
+        return meta
+
+    # Bound fan-out so complex reward lists do not serialize, while keeping API load modest.
+    semaphore = asyncio.Semaphore(4)
+
+    async def _load_limited(iid: str) -> tuple[str, dict[str, Any]]:
+        async with semaphore:
+            return iid, await _load_one(iid)
+
+    pairs = await asyncio.gather(*(_load_limited(iid) for iid in item_ids))
+    meta.update(pairs)
     return meta
 
 
@@ -393,7 +404,7 @@ def _item_rows(raw_list: Any, item_meta: dict[str, dict[str, Any]] | None) -> li
         iid = str(it.get("id") or "")
         if not iid:
             continue
-        amount = it.get("amount", 1)
+        amount = _escape(it.get("amount", 1))
         m = item_meta.get(iid) or {}
         rows.append(
             {
@@ -490,7 +501,7 @@ async def _format_reward_cards(
             cards.append({
                 "kind": typ,
                 "title": point_types[typ],
-                "amount": f"× {c}",
+                "amount": _escape(f"× {c}"),
                 "icon_uri": _reward_icon_data_uri(typ),
                 "is_card": True,
                 "html": "",
@@ -501,7 +512,7 @@ async def _format_reward_cards(
         if typ == "exp":
             extras.append({
                 "kind": "exp",
-                "title": f"获得阅历：{c}",
+                "title": _escape(f"获得阅历：{c}"),
                 "amount": "",
                 "icon_uri": "",
                 "is_card": False,
@@ -531,7 +542,7 @@ async def _format_reward_cards(
             sign = "+" if n > 0 else ""
             extras.append({
                 "kind": "affect",
-                "title": f"获得声望（{force}）{sign}{n}",
+                "title": _escape(f"获得声望（{force}）{sign}{n}"),
                 "amount": "",
                 "icon_uri": "",
                 "is_card": False,
@@ -548,7 +559,7 @@ async def _format_reward_cards(
                 icon_uri = await _fetch_icon_data_uri(icon, api)
             cards.append({
                 "kind": "achievement",
-                "title": name,
+                "title": _escape(name),
                 "amount": "",
                 "icon_uri": icon_uri or _reward_icon_data_uri("train"),
                 "is_card": True,
@@ -565,7 +576,7 @@ async def _format_reward_cards(
                 icon_uri = await _fetch_icon_data_uri(icon, api)
             cards.append({
                 "kind": "skill",
-                "title": name,
+                "title": _escape(name),
                 "amount": "",
                 "icon_uri": icon_uri,
                 "is_card": True,
@@ -595,7 +606,7 @@ async def _format_reward_cards(
                 iid = str(it.get("id") or "").strip()
                 if not iid:
                     continue
-                amt = it.get("amount", 1)
+                amt = _escape(it.get("amount", 1))
                 cards.append({
                     "kind": "item",
                     "title": iid,  # replaced later with real name
@@ -610,7 +621,7 @@ async def _format_reward_cards(
         if typ:
             extras.append({
                 "kind": typ,
-                "title": f"{typ} {c}",
+                "title": _escape(f"{typ} {c}"),
                 "amount": "",
                 "icon_uri": "",
                 "is_card": False,
@@ -656,8 +667,10 @@ async def build_quest_template_data(
         if t and t not in uniq:
             uniq.append(t)
 
-    objective_html = _segments_to_html(desc.get("Objective") or "")
-    description_html = _segments_to_html(desc.get("Description") or "")
+    objective_raw = desc.get("Objective") or quest.get("target") or ""
+    description_raw = desc.get("Description") or quest.get("description") or ""
+    objective_html = _segments_to_html(objective_raw)
+    description_html = _segments_to_html(description_raw)
 
     need_items = _item_rows(quest.get("needItems") or [], item_meta)
     offer_items = _item_rows(quest.get("offerItems") or [], item_meta)
@@ -681,7 +694,7 @@ async def build_quest_template_data(
             iid = str(rc.get("item_id") or "").strip()
             meta = (item_meta or {}).get(iid) or {}
             if meta.get("name"):
-                rc["title"] = meta.get("name")
+                rc["title"] = _escape(meta.get("name"))
             if meta.get("icon_uri"):
                 rc["icon_uri"] = meta.get("icon_uri")
             rc["is_card"] = True
@@ -691,20 +704,32 @@ async def build_quest_template_data(
             rc["icon_uri"] = _reward_icon_data_uri("train")
 
 
-    chain = ((quest.get("chain") or {}).get("current")) or []
-    chain_items: list[dict[str, Any]] = []
-    for x in chain:
-        if not isinstance(x, dict) or not x.get("visible", True):
-            continue
-        n = str(x.get("name") or "").strip()
-        if not n:
-            continue
-        chain_items.append(
-            {
-                "name": _escape(n),
-                "current": str(x.get("id")) == str(qid) or n == name,
-            }
-        )
+    chain_obj = quest.get("chain") or {}
+
+    def _chain_rows(raw: Any) -> list[dict[str, Any]]:
+        result: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+        for x in raw or []:
+            if not isinstance(x, dict) or not x.get("visible", True):
+                continue
+            n = str(x.get("name") or "").strip()
+            xid = str(x.get("id") or "")
+            if not n:
+                continue
+            key = (xid, n)
+            if key in seen:
+                continue
+            seen.add(key)
+            result.append(
+                {
+                    "name": _escape(n),
+                    "current": xid == str(qid) or n == name,
+                }
+            )
+        return result
+
+    chain_items = _chain_rows(chain_obj.get("current") if isinstance(chain_obj, dict) else [])
+    branch_items = _chain_rows(chain_obj.get("branch") if isinstance(chain_obj, dict) else [])
 
     return {
         "css": _load_css(),
@@ -722,6 +747,7 @@ async def build_quest_template_data(
         "kill_npcs": kill_npcs,
         "reward_cards": reward_cards,
         "chain_items": chain_items,
+        "branch_items": branch_items,
     }
 
 
@@ -759,9 +785,11 @@ async def build_quest_html(
         if data["description_html"]:
             parts.append("<div class='q-section-title'>任务描述</div>")
             parts.append(f"<div class='q-body'>{data['description_html']}</div>")
-        if data["chain_items"]:
-            parts.append("<div class='chain-label'>任务链</div><div class='chain-line'>")
-            for i, c in enumerate(data["chain_items"]):
+        for label, items in (("任务链", data["chain_items"]), ("任务分支", data["branch_items"])):
+            if not items:
+                continue
+            parts.append(f"<div class='chain-label'>{label}</div><div class='chain-line'>")
+            for i, c in enumerate(items):
                 if i:
                     parts.append("<span class='chain-sep'>»</span>")
                 cls = "chain-item current" if c["current"] else "chain-item"

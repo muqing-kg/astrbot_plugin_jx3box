@@ -11,7 +11,7 @@ from typing import Any
 from PIL import Image, ImageDraw
 
 from .font_util import get_font
-from .jx3_api import clean_desc
+from .jx3_api import ICON, clean_desc
 
 # 品质色（对齐官网 tip 实测）
 QUALITY_COLORS = {
@@ -200,6 +200,92 @@ _NO_USAGE_LABELS = {
     "其他",
     "饰品",
 }
+
+
+# 外观/挂宠等伪装备：接口常标 IsEquip，但 tip 不应走真装备宽板与精炼栏
+_PSEUDO_EQUIP_SUBTYPES = {14, 15, 20, 21, 22, 23, 25, 30}
+_HIDE_TYPE_LABELS = {
+    "挂宠",
+    "坐骑",
+    "奇趣坐骑",
+    "坐骑饰品",
+    "坐骑头饰",
+    "坐骑胸饰",
+    "坐骑鞍饰",
+    "坐骑足饰",
+    "腰部挂件",
+    "背部挂件",
+    "披风",
+    "宠物",
+}
+_MOUNT_LABELS_LOCAL = {"挂宠", "坐骑", "宠物", "奇趣坐骑"}
+
+
+def _subtype_int(item: dict[str, Any]) -> int | None:
+    try:
+        st = item.get("SubType")
+        if st in (None, "", "None"):
+            return None
+        return int(st)
+    except Exception:
+        return None
+
+
+def _max_strength_value(item: dict[str, Any]) -> int | None:
+    """Return positive max strength only; 0/None means no refine line on tip."""
+    raw = item.get("MaxStrengthLevel")
+    if raw in (None, "", "None"):
+        return None
+    try:
+        val = int(raw)
+    except Exception:
+        return None
+    if val <= 0:
+        return None
+    return val
+
+
+def is_true_equip(item: dict[str, Any]) -> bool:
+    """Real gear that uses equip tip width / refine / durability semantics."""
+    # weapons always
+    source = str(item.get("Source") or "").strip().lower()
+    if source == "weapon":
+        return True
+    try:
+        g = int(item.get("AucGenre"))
+        if g == 1:
+            return True
+        if g == 26 and int(item.get("AucSubType") or -1) == 3:
+            return True
+    except Exception:
+        pass
+
+    type_label = _type_label(item)
+    name = str(item.get("Name") or "")
+    st = _subtype_int(item)
+
+    if type_label in _HIDE_TYPE_LABELS or type_label in _MOUNT_LABELS_LOCAL:
+        return False
+    if name.startswith("挂宠") or "挂宠·" in name:
+        return False
+    if st in {25, 30}:
+        return False
+    if st in _PSEUDO_EQUIP_SUBTYPES and _max_strength_value(item) is None and not item.get("attributes"):
+        return False
+
+    if source in {"weapon", "armor", "hero_equip"}:
+        return True
+
+    strength = _max_strength_value(item)
+    if strength is not None:
+        return True
+    if item.get("attributes") and source in {"weapon", "armor", "trinket", "hero_equip"}:
+        return True
+    # classic equip trinkets with strength already handled; bare IsEquip hang-like → false
+    if item.get("IsEquip") and source == "trinket" and strength is None and not item.get("attributes"):
+        return False
+    return bool(item.get("IsEquip") and (strength is not None or bool(item.get("attributes"))))
+
 
 _ASSETS = Path(__file__).resolve().parent / "assets" / "item_tip"
 
@@ -739,55 +825,256 @@ def _furniture_lines(item: dict[str, Any]) -> list[tuple[str, str]]:
     return rows
 
 
+
+# ---- tip family / slot schema (data/samples/tip_family_slot_schema.json) ----
+_TIP_RENDER_ORDER: tuple[str, ...] = (
+    "title",
+    "strength",
+    "usage",
+    "bind",
+    "exist_time",
+    "type_label",
+    "furniture_meta",
+    "attr_plain",
+    "horse_attr_icon",
+    "diamonds",
+    "requires",
+    "durability",
+    "set",
+    "desc",
+    "level",
+    "recommend",
+    "appearance",
+    "cooldown",
+    "get_type",
+    "get_source",
+    "furniture_limit",
+    "wucai",
+)
+
+_FAMILY_OF_GENRE: dict[str, str] = {
+    "1": "weapon",
+    "2": "weapon_ranged",
+    "3": "equip_armor",
+    "4": "equip_trinket",
+    "5": "mount",
+    "6": "bag",
+    "7": "book_secret",
+    "8": "recipe",
+    "9": "consumable",
+    "10": "material",
+    "12": "book_read",
+    "13": "enhance",
+    "14": "guild_product",
+    "15": "gem",
+    "16": "box",
+    "20": "other",
+    "21": "furniture",
+    "22": "appearance",
+    "26": "equip_extended",
+    "-1": "quest_item",
+    "0": "unknown",
+    "99": "other_ext",
+    "None": "untyped",
+}
+
+_FAMILY_ALIASES: dict[str, str] = {
+    "mount_curious": "mount",
+    "appearance_or_pet": "appearance",
+}
+
+_FAMILY_SLOT_CACHE: dict[str, frozenset[str]] | None = None
+_SCHEMA_RENDER_ORDER: tuple[str, ...] | None = None
+
+
+def _truthy_field(v: Any) -> bool:
+    if v is None or v is False:
+        return False
+    if v == "" or v == [] or v == {} or v == 0 or v == "0":
+        return False
+    return True
+
+
+def _genre_key(item: dict[str, Any]) -> str:
+    if _truthy_field(item.get("IsQuest")):
+        return "-1"
+    g = item.get("AucGenre")
+    if g is None or g == "" or str(g).lower() == "none":
+        return "None"
+    return str(g)
+
+
+def tip_family_of(item: dict[str, Any]) -> str:
+    """Map item to tip family id used by tip_family_slot_schema.json."""
+    g = _genre_key(item)
+    fam = _FAMILY_OF_GENRE.get(g, "other")
+    tl = str(item.get("TypeLabel") or "")
+    name = str(item.get("Name") or "")
+    source = str(item.get("Source") or "").lower()
+    st = _subtype_int(item)
+
+    if g == "5":
+        if "饰" in tl or "幼崽" in tl:
+            return "mount_gear"
+        return "mount"
+    if g == "22":
+        if "挂宠" in name or "挂宠" in tl or "宠物" in tl:
+            return "hang_pet"
+        if "坐骑" in tl or "奇趣" in name or "奇趣" in tl:
+            return "mount"
+        return "appearance"
+    if g == "4" and any(x in tl for x in ("挂件", "披风")):
+        return "appearance_hanger"
+    if g == "26":
+        try:
+            if int(item.get("AucSubType") or -1) == 3:
+                return "weapon"
+        except Exception:
+            pass
+        return "equip_extended"
+    if isinstance(item.get("furniture_attributes"), dict) or g == "21":
+        return "furniture"
+
+    # Heuristics when AucGenre missing / untyped samples
+    if name.startswith("挂宠") or tl in {"挂宠", "宠物"} or st == 30:
+        return "hang_pet"
+    if tl in {"坐骑", "奇趣坐骑"} or name.startswith("坐骑") or st in {15, 25}:
+        # SubType 15 appears on some mount-body tips from API
+        if source in {"weapon", "armor"}:
+            pass
+        else:
+            if "饰" in tl:
+                return "mount_gear"
+            return "mount"
+    if source == "weapon" or fam == "weapon":
+        return "weapon"
+    if source == "armor":
+        return "equip_armor"
+    if source == "homeland":
+        return "furniture"
+
+    return _FAMILY_ALIASES.get(fam, fam)
+
+
+def _load_family_slot_map() -> dict[str, frozenset[str]]:
+    global _FAMILY_SLOT_CACHE, _SCHEMA_RENDER_ORDER
+    if _FAMILY_SLOT_CACHE is not None:
+        return _FAMILY_SLOT_CACHE
+
+    path = Path(__file__).resolve().parent / "assets" / "tip_templates" / "family_slot_schema.json"
+    mapping: dict[str, frozenset[str]] = {}
+    order = _TIP_RENDER_ORDER
+    try:
+        import json
+
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        ro = raw.get("render_order")
+        if isinstance(ro, list) and ro:
+            order = tuple(str(x) for x in ro)
+        families = raw.get("families") or {}
+        if isinstance(families, dict):
+            for fk, fam in families.items():
+                slots = fam.get("slots") if isinstance(fam, dict) else None
+                ids: list[str] = []
+                if isinstance(slots, list):
+                    for s in slots:
+                        if isinstance(s, dict) and s.get("id"):
+                            ids.append(str(s["id"]))
+                        elif isinstance(s, str):
+                            ids.append(s)
+                # title is always available
+                if "title" not in ids:
+                    ids.insert(0, "title")
+                mapping[str(fk)] = frozenset(ids)
+    except Exception:
+        mapping = {}
+
+    _SCHEMA_RENDER_ORDER = order
+    _FAMILY_SLOT_CACHE = mapping
+    return mapping
+
+
+def _slots_for_family(family: str) -> frozenset[str]:
+    mapping = _load_family_slot_map()
+    fam = _FAMILY_ALIASES.get(family, family)
+    if fam in mapping:
+        return mapping[fam]
+    # Unknown family: allow full official order, still omit empty at emit time.
+    return frozenset(_SCHEMA_RENDER_ORDER or _TIP_RENDER_ORDER)
+
+
+def _slot_allowed(allowed: frozenset[str], slot: str) -> bool:
+    return slot in allowed
+
+
 def _get_source_lines(item: dict[str, Any]) -> list[dict[str, Any]]:
-    """Build GetSource rows: official colors, selective brackets, original arrow."""
+    """Build GetSource tree rows only (no GetType fallback)."""
     rows: list[dict[str, Any]] = []
     src = item.get("GetSource")
-    if isinstance(src, list) and src:
-        rows.append({"text": "获取途径:", "color": C_SOURCE_HEADER, "kind": "normal"})
-        for block in src:
-            if isinstance(block, dict):
-                label = str(block.get("label") or "").strip()
-                children = block.get("children") or []
-                if label:
-                    rows.append({"text": label, "color": C_WHITE, "kind": "normal"})
-                for ch in children:
-                    if isinstance(ch, dict):
-                        name = str(ch.get("label") or ch.get("Name") or "").strip()
-                        if not name:
-                            continue
-                        app = str(ch.get("app") or "").strip().lower()
-                        # Official: item leaves use quality color + [] + arrow
-                        if app == "item":
-                            try:
-                                q = int(ch.get("quality") or 0)
-                            except Exception:
-                                q = 0
-                            color = QUALITY_COLORS.get(q, C_SOURCE_LEAF)
-                            text = name if (name.startswith("[") and name.endswith("]")) else f"[{name}]"
-                            rows.append({"text": text, "color": color, "kind": "source_leaf", "arrow": True})
-                        else:
-                            # reputation/adventure/achievement etc: green + [] + arrow
-                            text = name if (name.startswith("[") and name.endswith("]")) else f"[{name}]"
-                            rows.append({"text": text, "color": C_SOURCE_LEAF, "kind": "source_leaf", "arrow": True})
-                    else:
-                        text = str(ch or "").strip()
-                        if not text:
-                            continue
-                        # shop/NPC string leaves: green + [] + arrow
-                        if not (text.startswith("[") and text.endswith("]")):
-                            text = f"[{text}]"
-                        rows.append({"text": text, "color": C_SOURCE_LEAF, "kind": "source_leaf", "arrow": True})
-            else:
-                text = str(block or "").strip()
-                if text:
-                    rows.append({"text": text, "color": C_WHITE, "kind": "normal"})
+    if not (isinstance(src, list) and src):
         return rows
 
-    get_type = str(item.get("GetType") or "").strip()
-    if get_type:
-        rows.append({"text": f"物品来源：{get_type}", "color": C_WHITE, "kind": "normal"})
+    body_rows: list[dict[str, Any]] = []
+    for block in src:
+        if isinstance(block, dict):
+            label = str(block.get("label") or "").strip()
+            children = block.get("children") or []
+            if label:
+                # Group labels (物品/商店/...) sit one indent in, not flush with title
+                body_rows.append({"text": label, "color": C_WHITE, "kind": "source_group"})
+            for ch in children:
+                if isinstance(ch, dict):
+                    name = str(ch.get("label") or ch.get("Name") or "").strip()
+                    if not name:
+                        continue
+                    app = str(ch.get("app") or "").strip().lower()
+                    # Official: item leaves use quality color + [] + arrow
+                    if app == "item":
+                        try:
+                            q = int(ch.get("quality") or 0)
+                        except Exception:
+                            q = 0
+                        color = QUALITY_COLORS.get(q, C_SOURCE_LEAF)
+                        leaf = name if (name.startswith("[") and name.endswith("]")) else f"[{name}]"
+                        body_rows.append({"text": leaf, "color": color, "kind": "source_leaf", "arrow": True})
+                    else:
+                        # reputation/adventure/achievement etc: green + [] + arrow
+                        leaf = name if (name.startswith("[") and name.endswith("]")) else f"[{name}]"
+                        body_rows.append({"text": leaf, "color": C_SOURCE_LEAF, "kind": "source_leaf", "arrow": True})
+                else:
+                    leaf = str(ch or "").strip()
+                    if not leaf:
+                        continue
+                    # shop/NPC string leaves: green + [] + arrow
+                    if not (leaf.startswith("[") and leaf.endswith("]")):
+                        leaf = f"[{leaf}]"
+                    body_rows.append({"text": leaf, "color": C_SOURCE_LEAF, "kind": "source_leaf", "arrow": True})
+        else:
+            plain = str(block or "").strip()
+            if plain:
+                # bare group without children still indented
+                body_rows.append({"text": plain, "color": C_WHITE, "kind": "source_group"})
+    if not body_rows:
+        return rows
+    rows.append({"text": "获取途径:", "color": C_SOURCE_HEADER, "kind": "normal"})
+    rows.extend(body_rows)
     return rows
+
+
+def _get_type_row(
+    item: dict[str, Any],
+    *,
+    allow_with_source: bool = False,
+) -> dict[str, Any] | None:
+    """Single 物品来源 line, optionally when GetSource exists but is gated."""
+    if not allow_with_source and isinstance(item.get("GetSource"), list) and item.get("GetSource"):
+        return None
+    get_type = str(item.get("GetType") or "").strip()
+    if not get_type:
+        return None
+    text_gt = get_type if get_type.startswith("物品来源") else f"物品来源：{get_type}"
+    return {"text": text_gt, "color": C_WHITE, "kind": "normal", "slot": "get_type"}
+
 
 
 def _is_weapon(item: dict[str, Any]) -> bool:
@@ -835,7 +1122,38 @@ def _is_weapon(item: dict[str, Any]) -> bool:
     return type_label in weapon_labels
 
 
+def _horse_attr_parts(raw_label: str) -> tuple[str, str]:
+    """Split horse skill HTML into green title + white body description."""
+    s = str(raw_label or "").strip()
+    if not s:
+        return "", ""
+
+    title = ""
+    body = ""
+    m_title = re.search(r"<span\b[^>]*>(.*?)</span>", s, flags=re.I | re.S)
+    if m_title:
+        title = _plain_text(m_title.group(1)).strip()
+    bodies = re.findall(r"<div\b[^>]*>(.*?)</div>", s, flags=re.I | re.S)
+    if bodies:
+        body = "\n".join(part for part in (_plain_text(b).strip() for b in bodies) if part)
+    if not title and not body:
+        plain = _plain_text(s).strip()
+        if "\n" in plain:
+            title, body = plain.split("\n", 1)
+            title, body = title.strip(), body.strip()
+        else:
+            title = plain
+    elif not title:
+        # icon row without green span: keep first line as title
+        plain = _plain_text(s).strip()
+        title = plain.split("\n", 1)[0].strip() if plain else ""
+        if body and title == body:
+            body = ""
+    return title, body
+
+
 def _attr_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
+    """Build attribute rows; horse skill lines with icon_id become horse_attr."""
     attrs = item.get("attributes") or []
     if not isinstance(attrs, list):
         return []
@@ -854,6 +1172,25 @@ def _attr_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
             speed_text = plain_probe
             continue
 
+        icon_raw = attr.get("icon_id")
+        icon_id = str(icon_raw).strip() if icon_raw not in (None, "", "None", 0, "0") else ""
+        if icon_id:
+            title, body = _horse_attr_parts(raw_label)
+            if not title and not body:
+                continue
+            rows.append(
+                {
+                    "text": title or body,
+                    "color": C_GREEN,
+                    "kind": "horse_attr",
+                    "title": title or body,
+                    "body": body if title else "",
+                    "icon_id": icon_id,
+                    "icon_url": ICON.format(icon_id=icon_id),
+                }
+            )
+            continue
+
         segs = _rich_segments(raw_label, default_color=_attr_color(attr.get("color"), raw_label))
         if not segs:
             continue
@@ -868,16 +1205,25 @@ def _attr_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
             rows.append({"text": text, "color": final_color, "kind": "attr"})
 
     if rows and speed_text:
-        rows[0]["right"] = speed_text
-        rows[0]["right_color"] = C_WHITE
+        # Official tip places weapon speed on the first plain attr row.
+        for row in rows:
+            if row.get("kind") == "attr":
+                row["right"] = speed_text
+                row["right_color"] = C_WHITE
+                break
+        else:
+            rows.insert(0, {"text": speed_text, "color": C_WHITE, "kind": "attr"})
     elif speed_text:
         rows.append({"text": speed_text, "color": C_WHITE, "kind": "attr"})
     return rows
 
 
 def _build_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
-    """统一生成 tip 行。"""
+    """统一按 family 槽位表生成 tip 行：有值才出，无值省略。"""
+    family = tip_family_of(item)
+    allowed = _slots_for_family(family)
     rows: list[dict[str, Any]] = []
+
     name = str(item.get("Name") or "未知物品")
     try:
         quality = int(item.get("Quality") or 0)
@@ -885,14 +1231,12 @@ def _build_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
         quality = 0
     qcolor = QUALITY_COLORS.get(quality, C_WHITE)
 
-    max_strength = item.get("MaxStrengthLevel")
+    # title (+ optional strength on the right)
     strength = ""
-    if max_strength not in (None, ""):
-        try:
-            strength = f"精炼等级：0 / {int(max_strength)}"
-        except Exception:
+    if _slot_allowed(allowed, "strength"):
+        max_strength = _max_strength_value(item)
+        if max_strength is not None:
             strength = f"精炼等级：0 / {max_strength}"
-
     rows.append(
         {
             "text": name,
@@ -900,112 +1244,188 @@ def _build_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
             "kind": "title",
             "right": strength,
             "right_color": C_STRENGTH,
+            "slot": "title",
+            "family": family,
         }
     )
 
-    usage = _usage_text(item)
-    if usage:
-        rows.append(
-            {
-                "text": usage,
-                "color": C_WHITE,
-                "kind": "usage",
-                "icon_key": item.get("EquipUsage"),
-            }
-        )
+    if _slot_allowed(allowed, "usage"):
+        usage = _usage_text(item)
+        if usage:
+            rows.append(
+                {
+                    "text": usage,
+                    "color": C_WHITE,
+                    "kind": "usage",
+                    "icon_key": item.get("EquipUsage"),
+                    "slot": "usage",
+                }
+            )
 
-    bind = _bind_text(item)
-    if bind:
-        rows.append({"text": bind, "color": C_WHITE, "kind": "normal"})
+    if _slot_allowed(allowed, "bind"):
+        bind = _bind_text(item)
+        if bind:
+            rows.append({"text": bind, "color": C_WHITE, "kind": "normal", "slot": "bind"})
 
-    exist_t = _exist_time_text(item.get("MaxExistTime"))
-    if exist_t:
-        rows.append({"text": exist_t, "color": C_EXIST, "kind": "normal"})
+    if _slot_allowed(allowed, "exist_time"):
+        exist_t = _exist_time_text(item.get("MaxExistTime"))
+        if exist_t:
+            rows.append({"text": exist_t, "color": C_EXIST, "kind": "normal", "slot": "exist_time"})
 
-    # 实测官网 tip 主体通常不展示“最大拥有数”，本地也隐藏以对齐
+    if _slot_allowed(allowed, "type_label"):
+        type_label = _type_label(item)
+        if _is_weapon(item):
+            right = type_label if type_label and type_label != "武器" else ""
+            rows.append(
+                {
+                    "text": "武器",
+                    "color": C_WHITE,
+                    "kind": "normal",
+                    "right": right,
+                    "right_color": C_WHITE,
+                    "slot": "type_label",
+                }
+            )
+        elif type_label and type_label not in _HIDE_TYPE_LABELS:
+            # 官网挂宠/坐骑/挂件 tip 常不展示 u-type-label
+            rows.append({"text": type_label, "color": C_WHITE, "kind": "normal", "slot": "type_label"})
 
-    type_label = _type_label(item)
-    if _is_weapon(item):
-        right = type_label if type_label and type_label != "武器" else ""
-        rows.append(
-            {
-                "text": "武器",
-                "color": C_WHITE,
-                "kind": "normal",
-                "right": right,
-                "right_color": C_WHITE,
-            }
-        )
-    elif type_label:
-        rows.append({"text": type_label, "color": C_WHITE, "kind": "normal"})
+    if _slot_allowed(allowed, "furniture_meta"):
+        for text_f, color in _furniture_lines(item):
+            rows.append({"text": text_f, "color": color, "kind": "normal", "slot": "furniture_meta"})
 
-    for text, color in _furniture_lines(item):
-        rows.append({"text": text, "color": color, "kind": "normal"})
+    # attributes: plain vs horse icon rows share one pass, then gate by slot
+    if _slot_allowed(allowed, "attr_plain") or _slot_allowed(allowed, "horse_attr_icon"):
+        for attr_row in _attr_rows(item):
+            kind = str(attr_row.get("kind") or "attr")
+            if kind == "horse_attr":
+                if _slot_allowed(allowed, "horse_attr_icon"):
+                    attr_row = dict(attr_row)
+                    attr_row["slot"] = "horse_attr_icon"
+                    rows.append(attr_row)
+            else:
+                if _slot_allowed(allowed, "attr_plain"):
+                    attr_row = dict(attr_row)
+                    attr_row["slot"] = "attr_plain"
+                    rows.append(attr_row)
 
-    rows.extend(_attr_rows(item))
+    if _slot_allowed(allowed, "diamonds"):
+        diamonds = item.get("Diamonds") or []
+        for d in diamonds:
+            text_d = str(d or "").strip()
+            if not text_d:
+                continue
+            if not text_d.startswith("镶嵌孔"):
+                text_d = f"镶嵌孔：{text_d}"
+            rows.append({"text": text_d, "color": C_GRAY, "kind": "diamond", "slot": "diamonds"})
+        if diamonds and _is_weapon(item):
+            rows.append({"text": "<只能镶嵌五彩石>", "color": C_GRAY, "kind": "normal", "slot": "diamonds"})
 
-    diamonds = item.get("Diamonds") or []
-    for d in diamonds:
-        text = str(d or "").strip()
-        if not text:
-            continue
-        if not text.startswith("镶嵌孔"):
-            text = f"镶嵌孔：{text}"
-        rows.append({"text": text, "color": C_GRAY, "kind": "diamond"})
-    if diamonds and _is_weapon(item):
-        rows.append({"text": "<只能镶嵌五彩石>", "color": C_GRAY, "kind": "normal"})
+    if _slot_allowed(allowed, "requires"):
+        for req in _require_lines(item):
+            rows.append({"text": req, "color": C_WHITE, "kind": "normal", "slot": "requires"})
 
-    for req in _require_lines(item):
-        rows.append({"text": req, "color": C_WHITE, "kind": "normal"})
+    if _slot_allowed(allowed, "durability"):
+        max_dur = item.get("MaxDurability")
+        if is_true_equip(item) and max_dur not in (None, "", 0, "0"):
+            rows.append(
+                {
+                    "text": f"最大耐久度{max_dur}",
+                    "color": C_WHITE,
+                    "kind": "normal",
+                    "slot": "durability",
+                }
+            )
 
-    max_dur = item.get("MaxDurability")
-    if item.get("IsEquip") and max_dur not in (None, "", 0, "0"):
-        rows.append({"text": f"最大耐久度{max_dur}", "color": C_WHITE, "kind": "normal"})
-
-    set_lines = _set_lines(item)
+    set_lines = _set_lines(item) if _slot_allowed(allowed, "set") else []
     if set_lines:
-        rows.append({"text": "", "color": C_WHITE, "kind": "spacer"})
-        for text, color in set_lines:
-            rows.append({"text": text, "color": color, "kind": "normal"})
-        rows.append({"text": "", "color": C_WHITE, "kind": "spacer"})
+        rows.append({"text": "", "color": C_WHITE, "kind": "spacer", "slot": "set"})
+        for text_s, color in set_lines:
+            rows.append({"text": text_s, "color": color, "kind": "normal", "slot": "set"})
+        rows.append({"text": "", "color": C_WHITE, "kind": "spacer", "slot": "set"})
 
-    desc_segs = _desc_segments(item.get("Desc"))
+    desc_segs = _desc_segments(item.get("Desc")) if _slot_allowed(allowed, "desc") else []
     if desc_segs:
         if not set_lines:
-            rows.append({"text": "", "color": C_WHITE, "kind": "spacer"})
-        for text, color in desc_segs:
-            rows.append({"text": text, "color": color, "kind": "desc"})
-        rows.append({"text": "", "color": C_WHITE, "kind": "spacer"})
+            rows.append({"text": "", "color": C_WHITE, "kind": "spacer", "slot": "desc"})
+        for text_d, color in desc_segs:
+            rows.append({"text": text_d, "color": color, "kind": "desc", "slot": "desc"})
+        rows.append({"text": "", "color": C_WHITE, "kind": "spacer", "slot": "desc"})
 
-    level = item.get("Level")
-    if level not in (None, ""):
-        rows.append({"text": f"品质等级{level}", "color": C_YELLOW, "kind": "normal"})
+    if _slot_allowed(allowed, "level"):
+        level = item.get("Level")
+        if level not in (None, ""):
+            rows.append({"text": f"品质等级{level}", "color": C_YELLOW, "kind": "normal", "slot": "level"})
 
-    recommend = str(item.get("Recommend") or "").strip()
-    if recommend:
-        rows.append({"text": f"推荐门派：{recommend}", "color": C_WHITE, "kind": "normal"})
+    if _slot_allowed(allowed, "recommend"):
+        recommend = str(item.get("Recommend") or "").strip()
+        if recommend:
+            rows.append(
+                {
+                    "text": f"推荐门派：{recommend}",
+                    "color": C_WHITE,
+                    "kind": "normal",
+                    "slot": "recommend",
+                }
+            )
 
-    appearance = str(item.get("Appearance") or "").strip()
-    if appearance:
-        rows.append({"text": f"外观名称：{appearance}", "color": C_WHITE, "kind": "normal"})
-    exterior = str(item.get("CanExterior") or "").strip()
-    if exterior and exterior not in ("True", "False", "true", "false"):
-        if not exterior.startswith("外观"):
-            exterior = f"外观：{exterior}"
-        rows.append({"text": exterior, "color": C_WHITE, "kind": "normal"})
+    if _slot_allowed(allowed, "appearance"):
+        appearance = str(item.get("Appearance") or "").strip()
+        if appearance:
+            rows.append(
+                {
+                    "text": f"外观名称：{appearance}",
+                    "color": C_WHITE,
+                    "kind": "normal",
+                    "slot": "appearance",
+                }
+            )
+        exterior = str(item.get("CanExterior") or "").strip()
+        if exterior and exterior not in ("True", "False", "true", "false"):
+            if not exterior.startswith("外观"):
+                exterior = f"外观：{exterior}"
+            rows.append({"text": exterior, "color": C_WHITE, "kind": "normal", "slot": "appearance"})
 
-    cool = _cooldown_text(item.get("CoolDown"))
-    if cool:
-        rows.append({"text": cool, "color": C_WHITE, "kind": "normal"})
+    if _slot_allowed(allowed, "cooldown"):
+        cool = _cooldown_text(item.get("CoolDown"))
+        if cool:
+            rows.append({"text": cool, "color": C_WHITE, "kind": "normal", "slot": "cooldown"})
 
-    for src_row in _get_source_lines(item):
-        rows.append(src_row)
+    # get_source tree preferred; else get_type fallback — each gated independently
+    tree_rows = _get_source_lines(item)
+    if tree_rows and _slot_allowed(allowed, "get_source"):
+        for src_row in tree_rows:
+            src_row = dict(src_row)
+            src_row.setdefault("slot", "get_source")
+            rows.append(src_row)
+    elif _slot_allowed(allowed, "get_type"):
+        # Reaching this branch means no source tree was actually rendered.
+        gt = _get_type_row(item, allow_with_source=True)
+        if gt:
+            rows.append(gt)
 
-    fa = item.get("furniture_attributes")
-    if isinstance(fa, dict) and fa.get("limit") not in (None, ""):
-        rows.append({"text": f"摆放上限：{fa.get('limit')}", "color": C_WHITE, "kind": "normal"})
+    if _slot_allowed(allowed, "furniture_limit"):
+        fa = item.get("furniture_attributes")
+        if isinstance(fa, dict) and fa.get("limit") not in (None, ""):
+            rows.append(
+                {
+                    "text": f"摆放上限：{fa.get('limit')}",
+                    "color": C_WHITE,
+                    "kind": "normal",
+                    "slot": "furniture_limit",
+                }
+            )
+
+    if _slot_allowed(allowed, "wucai"):
+        wucai = item.get("WuCaiHtml") or item.get("WuCai") or ""
+        wucai_s = str(wucai or "").strip()
+        if wucai_s:
+            for text_w, color in _rich_segments(wucai_s, default_color=C_GREEN):
+                if text_w:
+                    rows.append({"text": text_w, "color": color, "kind": "normal", "slot": "wucai"})
 
     return rows
+
 
 
 def render_item_tip(item: dict[str, Any], icon_bytes: bytes | None, out_path: str | Path) -> str:
@@ -1016,7 +1436,7 @@ def render_item_tip(item: dict[str, Any], icon_bytes: bytes | None, out_path: st
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    is_equip = bool(item.get("IsEquip") or item.get("MaxStrengthLevel") not in (None, ""))
+    is_equip = is_true_equip(item)
     type_label_probe = _type_label(item)
     is_furniture_probe = bool(item.get("furniture_attributes")) or str(item.get("Source") or "").lower() == "homeland" or type_label_probe in {
         "家具",

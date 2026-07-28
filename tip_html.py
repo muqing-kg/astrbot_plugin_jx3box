@@ -17,6 +17,7 @@ from .item_tip import (
     _is_weapon,
     _load_usage_icon,
     _type_label,
+    is_true_equip,
 )
 
 _PLUGIN_DIR = Path(__file__).resolve().parent
@@ -76,9 +77,13 @@ ITEM_TIP_TMPL = """<!DOCTYPE html>
   {% for row in rows %}
     {% if row.kind == "spacer" %}
     <div class="row row-spacer"></div>
+    {% elif row.kind == "source_group" %}
+    <div class="row row-source-group">
+      <div class="left" style="color: {{ row.color }}">{{ row.text }}</div>
+    </div>
     {% elif row.kind == "source_leaf" %}
     <div class="row row-source">
-      {% if row.icon_uri %}<img class="source-arrow" src="{{ row.icon_uri }}" alt=""/>{% else %}<span class="source-arrow-css" aria-hidden="true"></span>{% endif %}
+      <span class="source-arrow-css" aria-hidden="true"></span>
       <div class="left" style="color: {{ row.color }}">{{ row.text }}</div>
     </div>
 {% elif row.kind == "usage" %}
@@ -90,6 +95,14 @@ ITEM_TIP_TMPL = """<!DOCTYPE html>
     <div class="row row-diamond">
       <span class="diamond-box"></span>
       <div class="left" style="color: {{ row.color }}">{{ row.text }}</div>
+    </div>
+    {% elif row.kind == "horse_attr" %}
+    <div class="row row-horse-attr">
+      {% if row.icon_uri %}<img class="horse-icon" src="{{ row.icon_uri }}" alt=""/>{% endif %}
+      <div class="horse-body">
+        {% if row.title %}<div class="horse-title" style="color: {{ row.color }}">{{ row.title }}</div>{% endif %}
+        {% if row.body %}<div class="horse-desc">{{ row.body }}</div>{% endif %}
+      </div>
     </div>
     {% else %}
     <div class="row row-{{ row.kind }}">
@@ -112,11 +125,8 @@ def select_tip_kind(item: dict[str, Any]) -> str:
     name = str(item.get("Name") or "")
     desc = str(item.get("Desc") or "")
 
-    is_equip = bool(item.get("IsEquip") or item.get("MaxStrengthLevel") not in (None, ""))
     if _is_weapon(item):
         return "weapon"
-    if is_equip:
-        return "equip"
 
     is_furniture = (
         bool(item.get("furniture_attributes"))
@@ -126,10 +136,28 @@ def select_tip_kind(item: dict[str, Any]) -> str:
     if is_furniture:
         return "furniture"
 
-    if type_label in _MOUNT_LABELS or name.startswith("挂宠") or "坐骑" in type_label:
+    # hang-pet / mount / appearance before bare IsEquip (API often marks them equip)
+    if (
+        type_label in _MOUNT_LABELS
+        or name.startswith("挂宠")
+        or "挂宠·" in name
+        or "坐骑" in type_label
+    ):
         return "mount_pet"
     if type_label in _APPEARANCE_LABELS or source in {"appearance", "exterior", "fashion"}:
         return "appearance"
+    try:
+        st = int(item.get("SubType")) if item.get("SubType") not in (None, "", "None") else None
+    except Exception:
+        st = None
+    if st in {25, 30}:
+        return "mount_pet"
+    if st in {20, 21, 22, 23} and not is_true_equip(item):
+        return "appearance"
+
+    if is_true_equip(item):
+        return "equip"
+
     if type_label in _BOOK_LABELS or "秘籍" in name or "秘笈" in name:
         return "book"
     if type_label in _MATERIAL_LABELS or source in {"material", "craft"}:
@@ -162,9 +190,8 @@ def _usage_icon_data_uri(icon_key: Any) -> str | None:
 
 
 def _source_arrow_data_uri() -> str:
-    """Official-like green double chevron; SVG data URI (no external file)."""
-    # Generated to match tip source leaf marker; no CDN asset found in jx3box tip DOM.
-    return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDE0IDEyIj4KICA8cGF0aCBkPSJNMSAxIEw2IDYgTDEgMTEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwRDI0QiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNNyAxIEwxMiA2IEw3IDExIiBmaWxsPSJub25lIiBzdHJva2U9IiMwMEQyNEIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPg=="
+    """Deprecated: tip template uses CSS triangles (.source-arrow-css)."""
+    return ""
 
 def _estimate_short_width(rows: list[dict[str, Any]]) -> int:
     max_units = 0.0
@@ -181,8 +208,18 @@ def _estimate_short_width(rows: list[dict[str, Any]]) -> int:
                 units += 1.0
             else:
                 units += 0.55
-        if kind in {"usage", "diamond"}:
+        if kind in {"usage", "diamond", "horse_attr"}:
             units += 1.4
+        if kind == "horse_attr":
+            body = str(row.get("body") or "")
+            for ch in body:
+                o = ord(ch)
+                if ch.isspace():
+                    units += 0.35
+                elif o > 0x2E80:
+                    units += 1.0
+                else:
+                    units += 0.55
         if right:
             units += 1.2
         max_units = max(max_units, units)
@@ -191,6 +228,7 @@ def _estimate_short_width(rows: list[dict[str, Any]]) -> int:
 
 
 def _load_css() -> str:
+    """Load tip CSS. Clarity comes from device_scale_factor=2 + CSS (not 8MB font embed)."""
     if _BASE_CSS.is_file():
         return _BASE_CSS.read_text(encoding="utf-8")
     return ""
@@ -224,12 +262,27 @@ def build_tip_template_data(item: dict[str, Any], kind: str | None = None) -> di
             "right_color": right_color,
             "icon_uri": "",
             "arrow": bool(row.get("arrow")),
+            "title": "",
+            "body": "",
         }
         if rkind == "usage":
             entry["icon_uri"] = _usage_icon_data_uri(row.get("icon_key")) or ""
-        if rkind == "source_leaf" or row.get("arrow"):
+        elif rkind == "horse_attr":
+            icon_url = str(row.get("icon_url") or "").strip()
+            icon_id = str(row.get("icon_id") or "").strip()
+            if not icon_url and icon_id:
+                icon_url = f"https://icon.jx3box.com/icon/{icon_id}.png"
+            entry["icon_uri"] = icon_url
+            entry["title"] = _escape(row.get("title") or row.get("text") or "")
+            entry["body"] = _escape(row.get("body") or "")
+            # keep left text as title for width estimator / fallbacks
+            entry["text"] = entry["title"]
+            entry["color"] = sanitize_css_color(row.get("color") or "#00D24B", "#00D24B")
+        if rkind == "source_group":
+            entry["kind"] = "source_group"
+        elif rkind == "source_leaf" or row.get("arrow"):
             entry["kind"] = "source_leaf"
-            entry["icon_uri"] = _source_arrow_data_uri()
+            entry["icon_uri"] = ""  # CSS triangle arrows; avoid fat SVG raster
             entry["arrow"] = True
         rows.append(entry)
 
@@ -280,6 +333,25 @@ def build_tip_html(item: dict[str, Any], kind: str | None = None) -> tuple[str, 
                 parts.append(
                     f"<div class='row row-diamond'><span class='diamond-box'></span>"
                     f"<div class='left' style='color:{row['color']}'>{row['text']}</div></div>"
+                )
+            elif row["kind"] == "source_group":
+                parts.append(
+                    f"<div class='row row-source-group'><div class='left' style='color:{row['color']}'>{row['text']}</div></div>"
+                )
+            elif row["kind"] == "source_leaf":
+                parts.append(
+                    f"<div class='row row-source'><span class='source-arrow-css' aria-hidden='true'></span>"
+                    f"<div class='left' style='color:{row['color']}'>{row['text']}</div></div>"
+                )
+            elif row["kind"] == "horse_attr":
+                icon = f"<img class='horse-icon' src='{row['icon_uri']}' alt=''/>" if row.get("icon_uri") else ""
+                title = row.get("title") or row.get("text") or ""
+                body = row.get("body") or ""
+                body_html = f"<div class='horse-desc'>{body}</div>" if body else ""
+                title_html = f"<div class='horse-title' style='color:{row['color']}'>{title}</div>" if title else ""
+                parts.append(
+                    f"<div class='row row-horse-attr'>{icon}"
+                    f"<div class='horse-body'>{title_html}{body_html}</div></div>"
                 )
             else:
                 right = (
