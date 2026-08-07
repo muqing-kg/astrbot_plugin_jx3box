@@ -269,6 +269,146 @@ def test_cycle_resets_without_refresh() -> None:
         assert w.state.map_name == ""
 
 
+def async_reports(rows):
+    async def fetch(server, page_size=50):
+        return list(rows)
+
+    return fetch
+
+
+def make_chitu(rid: int, created_at, map_name: str, minutes: int = 95) -> dict:
+    return {
+        "id": rid,
+        "server": "梦江南",
+        "type": "horse",
+        "map_name": map_name,
+        "content": f"当前马场内没有赤兔的马驹。\n距离下一匹赤兔出世还有{minutes}分钟\n",
+        "created_at": created_at,
+        "status": 0,
+    }
+
+
+def test_extract_chitu_prefers_future() -> None:
+    """未来赤兔倒计时优先于已过去的旧记录，避免下一场被旧记录挡住。"""
+    with tempfile.TemporaryDirectory() as td:
+        w = HorseWatcher(api=DummyApi(), state_path=os.path.join(td, "h.json"), server="梦江南")
+        now = now_cn()
+        rows = [
+            make_chitu(1, (now - timedelta(minutes=96)).isoformat(), "阴山大草原"),
+            make_chitu(200, (now - timedelta(minutes=5)).isoformat(), "黑戈壁"),
+        ]
+        hit = w._extract_chitu(rows)
+        assert hit is not None
+        map_name, eta, minutes, event_id = hit
+        assert map_name == "黑戈壁"
+        assert event_id == "chitu:黑戈壁:2026-08-07T23:30:00+08:00" or event_id.startswith("chitu:黑戈壁:")
+        assert eta > now
+
+
+def test_chitu_countdown_lifecycle() -> None:
+    """赤兔倒计时仍走发现/提前/刷新三连推。"""
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "h.json")
+        now = now_cn()
+        sent: list[str] = []
+
+        async def send_fn(text):
+            sent.append(text)
+
+        reports = [
+            {
+                "id": 1,
+                "content": "当前马场内没有赤兔的马驹。\n距离下一匹赤兔出世还有95分钟\n",
+                "created_at": (now - timedelta(minutes=85)).isoformat(),
+                "map_name": "阴山大草原",
+            }
+        ]
+        api = SimpleNamespace(fetch_horse_reports=async_reports(reports))
+        w = HorseWatcher(api=api, state_path=path, server="梦江南", send_fn=send_fn)
+
+        asyncio.run(w.tick())
+        assert w.state.pushed_found and "[赤兔速报]" in sent[0]
+
+        asyncio.run(w.tick())
+        assert w.state.pushed_pre and not w.state.pushed_refresh
+        assert "分钟刷新" in sent[1]
+
+        # 强制到点；校准窗口会再读 reports，故一并改掉源数据避免被覆盖
+        past = now_cn() - timedelta(minutes=1)
+        w.state.eta = past.isoformat()
+        w.state.last_calibrated_at = past.isoformat()
+        reports[:] = [
+            make_chitu(1, (past - timedelta(minutes=95)).isoformat(), "阴山大草原")
+        ]
+        asyncio.run(w.tick())
+        assert w.state.pushed_refresh
+        assert "赤兔已刷新" in sent[-1]
+
+
+def test_chitu_next_event_after_refresh() -> None:
+    """赤兔刷新后不再每周静默，下一场倒计时出现时继续推。"""
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "h.json")
+        now = now_cn()
+        sent: list[str] = []
+
+        async def send_fn(text):
+            sent.append(text)
+
+        reports = [
+            make_chitu(1, (now - timedelta(minutes=96)).isoformat(), "阴山大草原")
+        ]
+        api = SimpleNamespace(fetch_horse_reports=async_reports(reports))
+        w = HorseWatcher(api=api, state_path=path, server="梦江南", send_fn=send_fn)
+
+        asyncio.run(w.tick())
+        asyncio.run(w.tick())
+        assert w.state.pushed_refresh and len(sent) == 2
+        before = len(sent)
+        asyncio.run(w.tick())
+        assert len(sent) == before
+
+        reports.append(
+            make_chitu(2, now.isoformat(), "阴山大草原")
+        )
+        asyncio.run(w.tick())
+        assert len(sent) == before + 1
+        assert "[赤兔速报]" in sent[-1]
+        assert not w.state.pushed_refresh
+
+
+def test_upgrade_empty_event_id_no_repush() -> None:
+    """旧状态缺 event_id 时，不能把同一场赤兔再推一次。"""
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "h.json")
+        now = now_cn()
+        sent: list[str] = []
+
+        async def send_fn(text):
+            sent.append(text)
+
+        reports = [make_chitu(1, (now - timedelta(minutes=96)).isoformat(), "阴山大草原")]
+        api = SimpleNamespace(fetch_horse_reports=async_reports(reports))
+        w = HorseWatcher(api=api, state_path=path, server="梦江南", send_fn=send_fn)
+        # 模拟升级前已推送刷新、但无 event_id 的磁盘状态
+        eta = now - timedelta(minutes=1)
+        w.state.cycle_id = w._cycle_id()
+        w.state.locked = True
+        w.state.pushed_found = True
+        w.state.pushed_pre = True
+        w.state.pushed_refresh = True
+        w.state.map_name = "阴山大草原"
+        w.state.eta = eta.isoformat()
+        w.state.event_id = ""
+        w._save()
+
+        w2 = HorseWatcher(api=api, state_path=path, server="梦江南", send_fn=send_fn)
+        asyncio.run(w2.tick())
+        assert sent == []
+        assert w2.state.event_id  # 已补齐
+        assert w2.state.pushed_refresh is True
+
+
 def test_sanitize_color() -> None:
     from astrbot_plugin_jx3box.html_util import sanitize_css_color
     assert sanitize_css_color("#ff00aa") == "#ff00aa"
@@ -722,6 +862,10 @@ if __name__ == "__main__":
     test_format_has_server()
     test_schema_has_no_server_fields()
     test_cycle_resets_without_refresh()
+    test_extract_chitu_prefers_future()
+    test_chitu_countdown_lifecycle()
+    test_chitu_next_event_after_refresh()
+    test_upgrade_empty_event_id_no_repush()
     test_sanitize_color()
     test_choice_prefers_user_key()
     test_t2i_options_and_crop()

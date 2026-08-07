@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Awaitable
 
@@ -13,6 +13,10 @@ from .jx3_api import Jx3Api
 TZ = timezone(timedelta(hours=8))
 CHITU_RE = re.compile(r"距离下一匹赤兔出世还有(\d+)分钟")
 CHITU_SOON_RE = re.compile(r"下一匹赤兔即将出世")
+RECENT_GRACE_MINUTES = 2
+EVENT_BUCKET_MINUTES = 30
+
+SOURCE_CHITU = "chitu"
 
 
 def now_cn() -> datetime:
@@ -46,6 +50,8 @@ class HorseState:
     pushed_refresh: bool = False
     cycle_id: str = ""
     locked: bool = False
+    source_kind: str = ""
+    event_id: str = ""
 
     def eta_dt(self) -> datetime | None:
         if not self.eta:
@@ -102,8 +108,25 @@ class HorseWatcher:
             tue -= timedelta(days=7)
         return tue.strftime("%Y%m%d")
 
-    def _extract_chitu(self, reports: list[dict[str, Any]]) -> tuple[str, datetime, int | None] | None:
-        best = None
+    def _make_event_id(self, map_name: str, eta: datetime) -> str:
+        rounded = eta.replace(
+            minute=(eta.minute // EVENT_BUCKET_MINUTES) * EVENT_BUCKET_MINUTES,
+            second=0,
+            microsecond=0,
+        )
+        return f"{SOURCE_CHITU}:{map_name or 'unknown'}:{rounded.isoformat()}"
+
+    def _extract_chitu(
+        self, reports: list[dict[str, Any]]
+    ) -> tuple[str, datetime, int, str] | None:
+        """取下一场赤兔：优先未来事件，旧记录不挡新倒计时。
+
+        Return (map_name, eta, minutes, event_id).
+        """
+        best_future = None
+        best_recent = None
+        best_past = None
+        now = now_cn()
         for row in reports:
             content = str(row.get("content") or "")
             if "赤兔" not in content:
@@ -118,13 +141,17 @@ class HorseWatcher:
                 continue
             map_name = str(row.get("map_name") or "")
             eta = created + timedelta(minutes=minutes)
-            # 取最近未来/最近过去的有效预告
-            cand = (map_name, created, minutes, eta)
-            if best is None or abs((eta - now_cn()).total_seconds()) < abs((best[3] - now_cn()).total_seconds()):
-                best = cand
-        if not best:
-            return None
-        return best[0], best[3], best[2]
+            event_id = self._make_event_id(map_name, eta)
+            cand = (map_name, eta, minutes, event_id)
+            if eta > now:
+                if best_future is None or eta < best_future[1]:
+                    best_future = cand
+            elif eta >= now - timedelta(minutes=RECENT_GRACE_MINUTES):
+                if best_recent is None or eta > best_recent[1]:
+                    best_recent = cand
+            elif best_past is None or eta > best_past[1]:
+                best_past = cand
+        return best_future or best_recent or best_past
 
     def _format_found(self, eta: datetime, map_name: str) -> str:
         remain = eta - now_cn()
@@ -166,7 +193,7 @@ class HorseWatcher:
         st = self.state
         st.server = self.server
         cycle = self._cycle_id()
-        # 周期变化即重置，避免跨周未 pushed_refresh 时状态卡住
+        # 周期变化即重置，避免跨周状态卡住
         if st.cycle_id and st.cycle_id != cycle:
             st = HorseState(server=self.server, cycle_id=cycle)
             self.state = st
@@ -175,13 +202,45 @@ class HorseWatcher:
         if not st.cycle_id:
             st.cycle_id = cycle
 
-        # 已完成则冷却
-        if st.pushed_refresh:
-            self._save()
-            return
-
         now = now_cn()
         eta = st.eta_dt()
+
+        # 兼容旧状态：补齐 event_id，避免刷新后把同一场再推一遍
+        if not st.event_id and eta is not None:
+            st.event_id = self._make_event_id(st.map_name, eta)
+            self._save()
+
+        # 已推送刷新：同事件防重，等下一场赤兔
+        if st.pushed_refresh:
+            reports = await self.api.fetch_horse_reports(self.server)
+            hit = self._extract_chitu(reports)
+            if not hit:
+                self._save()
+                return
+            map_name, eta_dt, minutes, event_id = hit
+            # 同场防重；只接受明确下一场（未来，或 5 分钟内迟到发现）
+            if event_id == st.event_id:
+                self._save()
+                return
+            if eta_dt < now - timedelta(minutes=5):
+                self._save()
+                return
+            st = HorseState(
+                server=self.server,
+                cycle_id=cycle,
+                map_name=map_name,
+                eta=eta_dt.isoformat(),
+                source_minutes=minutes,
+                source_created_at=now.isoformat(),
+                source_kind=SOURCE_CHITU,
+                event_id=event_id,
+                locked=True,
+            )
+            self.state = st
+            await self._send(self._format_found(eta_dt, map_name))
+            st.pushed_found = True
+            self._save()
+            return
 
         # 未锁定：轮询发现
         if not st.locked:
@@ -190,7 +249,7 @@ class HorseWatcher:
             if not hit:
                 self._save()
                 return
-            map_name, eta_dt, minutes = hit
+            map_name, eta_dt, minutes, event_id = hit
             # 过旧预告忽略
             if eta_dt < now - timedelta(minutes=20):
                 self._save()
@@ -200,6 +259,8 @@ class HorseWatcher:
             st.eta = eta_dt.isoformat()
             st.source_minutes = minutes
             st.source_created_at = now.isoformat()
+            st.source_kind = SOURCE_CHITU
+            st.event_id = event_id
             if not st.pushed_found:
                 await self._send(self._format_found(eta_dt, map_name))
                 st.pushed_found = True
@@ -222,11 +283,12 @@ class HorseWatcher:
                 reports = await self.api.fetch_horse_reports(self.server)
                 hit = self._extract_chitu(reports)
                 if hit:
-                    map_name, eta_dt, minutes = hit
-                    st.map_name = map_name or st.map_name
-                    st.eta = eta_dt.isoformat()
-                    st.source_minutes = minutes
-                    eta = eta_dt
+                    map_name, eta_dt, minutes, event_id = hit
+                    if event_id == st.event_id:
+                        st.map_name = map_name or st.map_name
+                        st.eta = eta_dt.isoformat()
+                        st.source_minutes = minutes
+                        eta = eta_dt
                 st.last_calibrated_at = now.isoformat()
                 self._save()
             except Exception:
