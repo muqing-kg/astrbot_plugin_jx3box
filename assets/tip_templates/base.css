@@ -17,7 +17,7 @@ body { display: inline-block; }
   border: none;
   border-radius: 0;
   padding: 12px 11px 14px;
-  font-family: SimSun, "宋体", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-family: "JX3SimSun", SimSun, "宋体", "Noto Serif CJK SC", "Source Han Serif SC", serif;
   font-size: 14px;
   line-height: 22px;
   font-weight: 400;

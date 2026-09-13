@@ -8,6 +8,7 @@ import io
 from pathlib import Path
 from typing import Any
 
+from .font_util import simsun_embed_css
 from .html_util import build_t2i_options, crop_render_whitespace, is_http_url, sanitize_css_color
 from .item_tip import (
     C_STRENGTH,
@@ -258,8 +259,19 @@ def build_tip_template_data(item: dict[str, Any], kind: str | None = None) -> di
         rows.append(entry)
 
     viewport_width = 375
+
+    # 宋体子集内嵌：远端 t2i 无宋体也能渲染同款衬线
+    chars: set[str] = set(str(item.get("Name") or ""))
+    for r in rows:
+        chars.update(str(r.get("text") or ""))
+        chars.update(str(r.get("right") or ""))
+        chars.update(str(r.get("title") or ""))
+        chars.update(str(r.get("body") or ""))
+    face = simsun_embed_css(frozenset(chars))
+    css = face + "\n" + _load_css() if face else _load_css()
+
     return {
-        "css": _load_css(),
+        "css": css,
         "kind": kind,
         "has_set": bool(has_set and kind in {"equip", "weapon"}),
         "tip_width": tip_width,
