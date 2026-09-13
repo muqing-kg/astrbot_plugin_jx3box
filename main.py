@@ -54,7 +54,7 @@ def _norm_session_key(event: AstrMessageEvent) -> str:
 
 @register(
     "astrbot_plugin_jx3box",
-    "muqing",
+    "沐倾",
     "物品 tip / 成就链接 / 任务卡片",
     "1.0.2",
 )
