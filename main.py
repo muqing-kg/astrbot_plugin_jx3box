@@ -17,7 +17,7 @@ import time
 from typing import Any
 
 from astrbot.api import AstrBotConfig, logger
-from astrbot.api.event import AstrMessageEvent, filter
+from astrbot.api.event import AstrMessageEvent, MessageChain, filter
 from astrbot.api.star import Context, Star, StarTools, register
 import astrbot.api.message_components as Comp
 
@@ -68,6 +68,25 @@ class Jx3BoxPlugin(Star):
         self._data_dir = self._resolve_data_dir()
         self._choice_cache: dict[str, dict[str, Any]] = {}
 
+    async def _reply_plain(self, event: AstrMessageEvent, text: str) -> None:
+        await self._reply_chain(event, [Comp.Plain(text)])
+
+    async def _reply_chain(self, event: AstrMessageEvent, comps: list) -> None:
+        """直发消息：不经 AstrBot 结果装饰（无 @ / 引用 / 前缀 / 分段等任何附加）。"""
+        chain = MessageChain(chain=comps)
+        try:
+            await event.send(chain)
+        except Exception:
+            logger.exception("direct send failed, fallback to context.send_message")
+            try:
+                await self.context.send_message(str(event.unified_msg_origin), chain)
+            except Exception:
+                logger.exception("fallback send failed")
+        try:
+            event.stop_event()
+        except Exception:
+            pass
+
     def _resolve_data_dir(self) -> str:
         try:
             data_dir = StarTools.get_data_dir("astrbot_plugin_jx3box")
@@ -94,10 +113,10 @@ class Jx3BoxPlugin(Star):
         path = os.path.join(self._data_dir, "cards", "help.png")
         try:
             render_help_image(path)
-            yield event.chain_result([Comp.Image.fromFileSystem(path)])
+            await self._reply_chain(event, [Comp.Image.fromFileSystem(path)])
         except Exception:
             logger.exception("render help failed")
-            yield event.plain_result(
+            await self._reply_plain(event, 
                 "剑三查询帮助\n"
                 "物品 关键词  -> 物品 tip 图\n"
                 "成就 关键词  -> 成就链接\n"
@@ -113,23 +132,21 @@ class Jx3BoxPlugin(Star):
         """查询物品，返回 tip 详情图。"""
         keyword = self._extract_arg(event, "物品")
         if not keyword:
-            yield event.plain_result("用法：物品 关键词\n例如：物品 玄晶")
+            await self._reply_plain(event, "用法：物品 关键词\n例如：物品 玄晶")
             return
         try:
             rows = await self.api.search_items(keyword, per=200)
         except Exception:
             logger.exception("search items failed")
-            yield event.plain_result(_user_error("查询失败，请稍后重试。"))
+            await self._reply_plain(event, _user_error("查询失败，请稍后重试。"))
             return
         if not rows:
-            yield event.plain_result("物品名称错误")
+            await self._reply_plain(event, "物品名称错误")
             return
         if len(rows) == 1:
-            async for r in self._send_item_detail(event, rows[0]):
-                yield r
+            await self._send_item_detail(event, rows[0])
             return
-        async for r in self._emit_choices(event, kind="item", rows=rows):
-            yield r
+        await self._emit_choices(event, kind="item", rows=rows)
 
     # ---------------- 成就 ----------------
 
@@ -138,22 +155,21 @@ class Jx3BoxPlugin(Star):
         """查询成就，返回链接。"""
         keyword = self._extract_arg(event, "成就")
         if not keyword:
-            yield event.plain_result("用法：成就 关键词\n例如：成就 武神重临")
+            await self._reply_plain(event, "用法：成就 关键词\n例如：成就 武神重临")
             return
         try:
             rows = await self.api.search_achievements(keyword, per=200)
         except Exception:
             logger.exception("search achievements failed")
-            yield event.plain_result(_user_error("查询失败，请稍后重试。"))
+            await self._reply_plain(event, _user_error("查询失败，请稍后重试。"))
             return
         if not rows:
-            yield event.plain_result("成就名称错误")
+            await self._reply_plain(event, "成就名称错误")
             return
         if len(rows) == 1:
-            yield event.plain_result(self._format_ach(rows[0]))
+            await self._reply_plain(event, self._format_ach(rows[0]))
             return
-        async for r in self._emit_choices(event, kind="achievement", rows=rows):
-            yield r
+        await self._emit_choices(event, kind="achievement", rows=rows)
 
     # ---------------- 任务 ----------------
 
@@ -162,23 +178,21 @@ class Jx3BoxPlugin(Star):
         """查询任务，返回信息卡图片。"""
         keyword = self._extract_arg(event, "任务")
         if not keyword:
-            yield event.plain_result("用法：任务 关键词\n例如：任务 茶馆问讯")
+            await self._reply_plain(event, "用法：任务 关键词\n例如：任务 茶馆问讯")
             return
         try:
             rows = await self.api.search_quests(keyword, per=200)
         except Exception:
             logger.exception("search quests failed")
-            yield event.plain_result(_user_error("查询失败，请稍后重试。"))
+            await self._reply_plain(event, _user_error("查询失败，请稍后重试。"))
             return
         if not rows:
-            yield event.plain_result("任务名称错误")
+            await self._reply_plain(event, "任务名称错误")
             return
         if len(rows) == 1:
-            async for r in self._send_quest_detail(event, rows[0]):
-                yield r
+            await self._send_quest_detail(event, rows[0])
             return
-        async for r in self._emit_choices(event, kind="quest", rows=rows):
-            yield r
+        await self._emit_choices(event, kind="quest", rows=rows)
 
     # ---------------- 连续选择：数字 / 换页 ----------------
 
@@ -214,7 +228,7 @@ class Jx3BoxPlugin(Star):
                 event.stop_event()
             except Exception:
                 pass
-            yield event.plain_result("候选列表已过期，请重新查询。")
+            await self._reply_plain(event, "候选列表已过期，请重新查询。")
             return
 
         try:
@@ -229,7 +243,7 @@ class Jx3BoxPlugin(Star):
 
         if is_page:
             if pages <= 1 or page >= pages:
-                yield event.plain_result("已经是最后一页")
+                await self._reply_plain(event, "已经是最后一页")
                 return
             page += 1
             cache["page"] = page
@@ -238,13 +252,12 @@ class Jx3BoxPlugin(Star):
             for k in list(self._choice_keys(event)):
                 if k in self._choice_cache:
                     self._choice_cache[k] = cache
-            async for r in self._send_choice_page(event, kind=kind, rows=rows, page=page):
-                yield r
+            await self._send_choice_page(event, kind=kind, rows=rows, page=page)
             return
 
         idx = int(m.group(1)) - 1
         if idx < 0 or idx >= len(rows):
-            yield event.plain_result(f"序号超出范围，请输入 1 到 {len(rows)}")
+            await self._reply_plain(event, f"序号超出范围，请输入 1 到 {len(rows)}")
             return
 
         row = rows[idx]
@@ -259,15 +272,13 @@ class Jx3BoxPlugin(Star):
             self._choice_cache.pop(k, None)
         self._choice_cache.pop(key, None)
         if kind == "item":
-            async for r in self._send_item_detail(event, row):
-                yield r
+            await self._send_item_detail(event, row)
         elif kind == "achievement":
-            yield event.plain_result(self._format_ach(row))
+            await self._reply_plain(event, self._format_ach(row))
         elif kind == "quest":
-            async for r in self._send_quest_detail(event, row):
-                yield r
+            await self._send_quest_detail(event, row)
         else:
-            yield event.plain_result("未知候选类型，请重新查询。")
+            await self._reply_plain(event, "未知候选类型，请重新查询。")
 
     # ---------------- helpers ----------------
 
@@ -365,11 +376,10 @@ class Jx3BoxPlugin(Star):
         name_key = name_key_for_kind(kind)
         if len(rows) <= TEXT_THRESHOLD:
             self._save_choices(event, kind, rows, page=1)
-            yield event.plain_result(self._format_choices(rows, name_key=name_key, extra=label))
+            await self._reply_plain(event, self._format_choices(rows, name_key=name_key, extra=label))
             return
         self._save_choices(event, kind, rows, page=1)
-        async for r in self._send_choice_page(event, kind=kind, rows=rows, page=1):
-            yield r
+        await self._send_choice_page(event, kind=kind, rows=rows, page=1)
 
     async def _collect_choice_icons(self, rows: list[dict[str, Any]]) -> dict[str, bytes]:
         ids: list[str] = []
@@ -421,7 +431,7 @@ class Jx3BoxPlugin(Star):
                 out_path=out,
                 icon_bytes_map=icons,
             )
-            yield event.chain_result([Comp.Image.fromFileSystem(path)])
+            await self._reply_chain(event, [Comp.Image.fromFileSystem(path)])
         except Exception:
             logger.exception("choice list image failed")
             # text fallback for current page only
@@ -433,7 +443,7 @@ class Jx3BoxPlugin(Star):
                 name = str(row.get(name_key) or row.get("Name") or row.get("name") or "?")
                 lines.append(f"{base + i}. {name}")
             lines.append(choice_footer(is_last=(pages <= 1 or page_n >= pages)))
-            yield event.plain_result("\n".join(lines))
+            await self._reply_plain(event, "\n".join(lines))
 
     def _format_ach(self, row: dict[str, Any]) -> str:
         ach_id = row.get("ID") or row.get("id")
@@ -448,7 +458,7 @@ class Jx3BoxPlugin(Star):
     async def _send_item_detail(self, event: AstrMessageEvent, row: dict[str, Any]):
         item_id = str(row.get("id") or "")
         if not item_id:
-            yield event.plain_result("物品数据异常。")
+            await self._reply_plain(event, "物品数据异常。")
             return
         try:
             try:
@@ -462,24 +472,21 @@ class Jx3BoxPlugin(Star):
             img = await render_item_tip_html(self, detail, return_url=False)
             img_s = str(img or "")
             if img_s.startswith("http://") or img_s.startswith("https://"):
-                if hasattr(event, "image_result"):
-                    yield event.image_result(img_s)
-                else:
-                    yield event.chain_result([Comp.Image.fromURL(img_s)])
+                await self._reply_chain(event, [Comp.Image.fromURL(img_s)])
             else:
-                yield event.chain_result([Comp.Image.fromFileSystem(img_s)])
+                await self._reply_chain(event, [Comp.Image.fromFileSystem(img_s)])
         except Exception:
             logger.exception("item detail failed")
             name = row.get("Name") or item_id
             url = ITEM_VIEW.format(item_id=item_id)
-            yield event.plain_result(
+            await self._reply_plain(event, 
                 "物品详情渲染失败，请稍后重试。" + chr(10) + url + chr(10) + str(name)
             )
 
     async def _send_quest_detail(self, event: AstrMessageEvent, row: dict[str, Any]):
         qid = row.get("id") or row.get("QuestID")
         if qid is None:
-            yield event.plain_result("任务数据异常。")
+            await self._reply_plain(event, "任务数据异常。")
             return
         try:
             try:
@@ -496,15 +503,12 @@ class Jx3BoxPlugin(Star):
             img = await render_quest_card_html(self, detail, item_meta=item_meta, return_url=False)
             img_s = str(img or "")
             if img_s.startswith("http://") or img_s.startswith("https://"):
-                if hasattr(event, "image_result"):
-                    yield event.image_result(img_s)
-                else:
-                    yield event.chain_result([Comp.Image.fromURL(img_s)])
+                await self._reply_chain(event, [Comp.Image.fromURL(img_s)])
             else:
-                yield event.chain_result([Comp.Image.fromFileSystem(img_s)])
+                await self._reply_chain(event, [Comp.Image.fromFileSystem(img_s)])
         except Exception:
             logger.exception("quest detail failed")
             name = row.get("name") or qid
-            yield event.plain_result(
+            await self._reply_plain(event, 
                 "任务卡片渲染失败，请稍后重试。" + chr(10) + f"任务：{name}（ID:{qid}）"
             )
