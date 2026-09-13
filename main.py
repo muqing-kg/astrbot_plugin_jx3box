@@ -1,9 +1,9 @@
 """AstrBot 剑三魔盒查询插件。
 
 命令（带不带 / 均可）：
-- 物品 关键词
-- 成就 关键词
-- 任务 关键词
+- 物品查询 关键词
+- 成就查询 关键词
+- 任务查询 关键词
 - 多个结果直接回复数字选择；超过 10 条出图，回复 换页 翻页
 - jx3帮助
 """
@@ -118,21 +118,21 @@ class Jx3BoxPlugin(Star):
             logger.exception("render help failed")
             await self._reply_plain(event, 
                 "剑三查询帮助\n"
-                "物品 关键词  -> 物品 tip 图\n"
-                "成就 关键词  -> 成就链接\n"
-                "任务 关键词  -> 任务信息卡\n"
+                "物品查询 关键词  -> 物品 tip 图\n"
+                "成就查询 关键词  -> 成就链接\n"
+                "任务查询 关键词  -> 任务信息卡\n"
                 "命令带不带 / 均可；多个结果直接回复数字，超过 10 条回复 换页\n"
                 "帮助图生成失败，请稍后重试。"
             )
 
     # ---------------- 物品 ----------------
 
-    @filter.regex(r"^/?物品(?:\s|$)")
+    @filter.regex(r"^/?物品查询(?:\s|$)")
     async def cmd_item(self, event: AstrMessageEvent):
         """查询物品，返回 tip 详情图。"""
-        keyword = self._extract_arg(event, "物品")
+        keyword = self._extract_arg(event, "物品查询")
         if not keyword:
-            await self._reply_plain(event, "用法：物品 关键词\n例如：物品 玄晶")
+            await self._reply_plain(event, "用法：物品查询 关键词\n例如：物品查询 玄晶")
             return
         try:
             rows = await self.api.search_items(keyword, per=200)
@@ -150,12 +150,12 @@ class Jx3BoxPlugin(Star):
 
     # ---------------- 成就 ----------------
 
-    @filter.regex(r"^/?成就(?:\s|$)")
+    @filter.regex(r"^/?成就查询(?:\s|$)")
     async def cmd_ach(self, event: AstrMessageEvent):
         """查询成就，返回链接。"""
-        keyword = self._extract_arg(event, "成就")
+        keyword = self._extract_arg(event, "成就查询")
         if not keyword:
-            await self._reply_plain(event, "用法：成就 关键词\n例如：成就 武神重临")
+            await self._reply_plain(event, "用法：成就查询 关键词\n例如：成就查询 武神重临")
             return
         try:
             rows = await self.api.search_achievements(keyword, per=200)
@@ -173,12 +173,12 @@ class Jx3BoxPlugin(Star):
 
     # ---------------- 任务 ----------------
 
-    @filter.regex(r"^/?任务(?:\s|$)")
+    @filter.regex(r"^/?任务查询(?:\s|$)")
     async def cmd_quest(self, event: AstrMessageEvent):
         """查询任务，返回信息卡图片。"""
-        keyword = self._extract_arg(event, "任务")
+        keyword = self._extract_arg(event, "任务查询")
         if not keyword:
-            await self._reply_plain(event, "用法：任务 关键词\n例如：任务 茶馆问讯")
+            await self._reply_plain(event, "用法：任务查询 关键词\n例如：任务查询 茶馆问讯")
             return
         try:
             rows = await self.api.search_quests(keyword, per=200)
@@ -284,7 +284,7 @@ class Jx3BoxPlugin(Star):
 
     def _extract_arg(self, event: AstrMessageEvent, cmd: str) -> str:
         text = (event.message_str or "").strip()
-        # 兼容：物品 玄晶 / /物品 玄晶
+        # 兼容：物品查询 玄晶 / /物品查询 玄晶
         text = re.sub(rf"^/?{re.escape(cmd)}\s*", "", text).strip()
         return text
 
