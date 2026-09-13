@@ -28,15 +28,16 @@ QUALITY_COLORS = {
 C_BG = (15, 34, 34, 224)  # rgba(15,34,34,0.88) from item.less
 C_BORDER = (15, 34, 34, 255)
 C_WHITE = "#FFFFFF"
-C_GREEN = "#00D24B"  # .u-green
-C_GREEN2 = "#00D24B"
+C_GREEN = "#00C848"  # 游戏实测绿
+C_GREEN2 = "#00C848"
 C_YELLOW = "#FFFF00"  # .u-yellow
 C_ORANGE = "#FFA500"  # .u-orange / quality 5
+C_EFFECT = "#FF9600"  # 特殊属性效果条目橙
 C_GRAY = "#ADADAD"  # .u-gray
 C_STRENGTH = "#7EE3A3"  # .u-max-strength-level
 C_DESC = "#FFFF00"
 C_EXIST = "#CFCFCF"  # .u-max-exist-time
-C_SOURCE_HEADER = "#FFA500"  # orange header for 获取途径
+C_SOURCE_HEADER = "#FFA500"  # 获取途径 标签橙（第三轮实测为准）
 C_SOURCE_LEAF = "#00D24B"
 
 EQUIP_USAGE = {
@@ -287,7 +288,7 @@ def is_true_equip(item: dict[str, Any]) -> bool:
     return bool(item.get("IsEquip") and (strength is not None or bool(item.get("attributes"))))
 
 
-_ASSETS = Path(__file__).resolve().parent / "assets" / "item_tip"
+_ASSETS = Path(__file__).resolve().parent.parent / "assets" / "item_tip"
 
 _RE_TEXT_FONT = re.compile(
     r'text\s*=\s*"((?:\\.|[^"\\])*)"(?:[^<>]*?font\s*=\s*(\d+))?',
@@ -387,7 +388,7 @@ def _font_color(font: Any, default: str = C_DESC) -> str:
     if key == "105":
         return C_GREEN
     if key == "101":
-        return C_ORANGE
+        return C_EFFECT
     if key in {"100", "0", ""}:
         return default
     return default
@@ -961,7 +962,7 @@ def _load_family_slot_map() -> dict[str, frozenset[str]]:
     if _FAMILY_SLOT_CACHE is not None:
         return _FAMILY_SLOT_CACHE
 
-    path = Path(__file__).resolve().parent / "assets" / "tip_templates" / "family_slot_schema.json"
+    path = Path(__file__).resolve().parent.parent / "assets" / "tip_templates" / "family_slot_schema.json"
     mapping: dict[str, frozenset[str]] = {}
     order = _TIP_RENDER_ORDER
     try:
@@ -1021,7 +1022,7 @@ def _get_source_lines(item: dict[str, Any]) -> list[dict[str, Any]]:
             children = block.get("children") or []
             if label:
                 # Group labels (物品/商店/...) sit one indent in, not flush with title
-                body_rows.append({"text": label, "color": C_WHITE, "kind": "source_group"})
+                body_rows.append({"text": label, "color": C_YELLOW, "kind": "source_group"})
             for ch in children:
                 if isinstance(ch, dict):
                     name = str(ch.get("label") or ch.get("Name") or "").strip()
@@ -1035,28 +1036,27 @@ def _get_source_lines(item: dict[str, Any]) -> list[dict[str, Any]]:
                         except Exception:
                             q = 0
                         color = QUALITY_COLORS.get(q, C_SOURCE_LEAF)
-                        leaf = name if (name.startswith("[") and name.endswith("]")) else f"[{name}]"
+                        leaf = name
                         body_rows.append({"text": leaf, "color": color, "kind": "source_leaf", "arrow": True})
                     else:
                         # reputation/adventure/achievement etc: green + [] + arrow
-                        leaf = name if (name.startswith("[") and name.endswith("]")) else f"[{name}]"
+                        leaf = name
                         body_rows.append({"text": leaf, "color": C_SOURCE_LEAF, "kind": "source_leaf", "arrow": True})
                 else:
                     leaf = str(ch or "").strip()
                     if not leaf:
                         continue
                     # shop/NPC string leaves: green + [] + arrow
-                    if not (leaf.startswith("[") and leaf.endswith("]")):
-                        leaf = f"[{leaf}]"
+                    _ = leaf  # keep plain leaf text (no brackets)
                     body_rows.append({"text": leaf, "color": C_SOURCE_LEAF, "kind": "source_leaf", "arrow": True})
         else:
             plain = str(block or "").strip()
             if plain:
                 # bare group without children still indented
-                body_rows.append({"text": plain, "color": C_WHITE, "kind": "source_group"})
+                body_rows.append({"text": plain, "color": C_YELLOW, "kind": "source_group"})
     if not body_rows:
         return rows
-    rows.append({"text": "获取途径:", "color": C_SOURCE_HEADER, "kind": "normal"})
+    rows.append({"text": "获取途径：", "color": C_SOURCE_HEADER, "kind": "normal"})
     rows.extend(body_rows)
     return rows
 
@@ -1072,7 +1072,7 @@ def _get_type_row(
     get_type = str(item.get("GetType") or "").strip()
     if not get_type:
         return None
-    text_gt = get_type if get_type.startswith("物品来源") else f"物品来源：{get_type}"
+    text_gt = get_type if get_type.startswith("物品来源") else f"物品来源： {get_type}"
     return {"text": text_gt, "color": C_WHITE, "kind": "normal", "slot": "get_type"}
 
 
@@ -1195,6 +1195,8 @@ def _attr_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
         if not segs:
             continue
         for text, color in segs:
+            if text == "特殊属性效果":
+                rows.append({"text": "", "color": C_WHITE, "kind": "effect_ph"})
             base = _attr_color(attr.get("color"), text)
             if color in {C_GREEN, C_ORANGE, C_YELLOW}:
                 final_color = color
@@ -1236,7 +1238,7 @@ def _build_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
     if _slot_allowed(allowed, "strength"):
         max_strength = _max_strength_value(item)
         if max_strength is not None:
-            strength = f"精炼等级：0 / {max_strength}"
+            strength = f"精炼等级: 0 / {max_strength}"
     rows.append(
         {
             "text": name,
@@ -1319,11 +1321,19 @@ def _build_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
                 text_d = f"镶嵌孔：{text_d}"
             rows.append({"text": text_d, "color": C_GRAY, "kind": "diamond", "slot": "diamonds"})
         if diamonds and _is_weapon(item):
-            rows.append({"text": "<只能镶嵌五彩石>", "color": C_GRAY, "kind": "normal", "slot": "diamonds"})
+            rows.append({"text": "〈只能镶嵌五彩石〉", "color": C_WHITE, "kind": "diamond", "slot": "diamonds"})
 
     if _slot_allowed(allowed, "requires"):
         for req in _require_lines(item):
-            rows.append({"text": req, "color": C_WHITE, "kind": "normal", "slot": "requires"})
+            rows.append(
+                {
+                    "text": req,
+                    "color": C_WHITE,
+                    "kind": "normal",
+                    "slot": "requires",
+                    "bold": req.startswith("需要等级"),
+                }
+            )
 
     if _slot_allowed(allowed, "durability"):
         max_dur = item.get("MaxDurability")
@@ -1331,7 +1341,7 @@ def _build_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
             rows.append(
                 {
                     "text": f"最大耐久度{max_dur}",
-                    "color": C_WHITE,
+                    "color": C_YELLOW,
                     "kind": "normal",
                     "slot": "durability",
                 }
@@ -1362,7 +1372,7 @@ def _build_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
         if recommend:
             rows.append(
                 {
-                    "text": f"推荐门派：{recommend}",
+                    "text": f"推荐门派： {recommend}",
                     "color": C_WHITE,
                     "kind": "normal",
                     "slot": "recommend",

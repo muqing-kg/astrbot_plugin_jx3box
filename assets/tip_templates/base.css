@@ -1,45 +1,36 @@
-/* Local HTML tip templates — JX3BOX-like, multi-kind */
+/* 剑网3 游戏风物品 tooltip —— 按参考截图逐像素规格复刻 */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   background: transparent;
   margin: 0;
   padding: 0;
   width: fit-content;
-  max-width: fit-content;
   height: fit-content;
-  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: geometricPrecision;
-  font-kerning: none;
 }
-body {
-  display: inline-block;
-  width: fit-content;
-  max-width: fit-content;
-}
+body { display: inline-block; }
 
 #tip-root {
   display: inline-block;
-  width: fit-content;
-  max-width: 100%;
-  color: #fff;
-  /* light outline only — heavy shadow blurs glyphs on t2i */
-  text-shadow: 0 0 1px rgba(0, 0, 0, 0.55);
-  /* opaque panel avoids white page showing through translucent fill */
-  background: rgb(15, 34, 34);
-  border: 1px solid #0f2222;
-  line-height: 1;
+  width: 375px;
+  color: #ffffff;
+  background: #2b3d3d;
+  border: none;
+  border-radius: 0;
+  padding: 12px 11px 14px;
+  font-family: SimSun, "宋体", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.85);
   white-space: normal;
-  word-break: break-word;
+  word-break: break-all;
   overflow: hidden;
 }
 .tip-inner { width: 100%; }
+
 .row {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
-  position: relative;
   width: 100%;
   overflow: hidden;
 }
@@ -50,136 +41,19 @@ body {
   white-space: nowrap;
   text-align: right;
 }
-.row-usage { align-items: center; }
-.row-usage .usage-icon {
-  width: 15px;
-  height: 15px;
-  margin-right: 4px;
-  flex: 0 0 15px;
-  object-fit: contain;
-}
-.row-diamond { align-items: center; }
-.row-diamond .diamond-box {
-  width: 10px;
-  height: 10px;
-  border: 1px solid #ADADAD;
-  margin-right: 5px;
-  flex: 0 0 10px;
-  box-sizing: border-box;
-}
 
-.row-horse-attr {
-  align-items: flex-start;
-  gap: 6px;
-}
-.row-horse-attr .horse-icon {
-  width: 18px;
-  height: 18px;
-  margin-top: 1px;
-  flex: 0 0 18px;
-  object-fit: contain;
-  image-rendering: auto;
-}
-.row-horse-attr .horse-body {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.row-horse-attr .horse-title {
-  color: #00D24B;
-  line-height: 18px;
-  min-height: 18px;
-}
-.row-horse-attr .horse-desc {
-  color: #FFFFFF;
-  line-height: 18px;
-  white-space: normal;
-  word-break: break-word;
-}
+/* 缩进：特殊效果条目 · 前缀 +5px */
+.row .left.indent-dot { padding-left: 5px; }
 
-.row-spacer { width: 100%; padding: 0 !important; height: 0; }
-
-/* equip / weapon */
-.kind-equip, .kind-weapon {
-  width: 341px;
-  font-size: 13px;
-  padding: 11px 12px;
-}
-.kind-equip .row, .kind-weapon .row {
-  min-height: 21px;
-  line-height: 21px;
-}
-.kind-equip.has-set .row, .kind-weapon.has-set .row {
-  min-height: 22px;
-  line-height: 22px;
-}
-.kind-equip .row-spacer, .kind-weapon .row-spacer {
-  height: 10px; min-height: 10px;
-}
-.kind-equip.has-set .row-spacer, .kind-weapon.has-set .row-spacer {
-  height: 14px; min-height: 14px;
-}
-
-/* furniture */
-.kind-furniture {
-  width: 345px;
-  font-size: 13px;
-  padding: 10px 12px;
-}
-.kind-furniture .row { min-height: 20px; line-height: 20px; }
-.kind-furniture .row-spacer { height: 10px; min-height: 10px; }
-
-/* short family */
-.kind-consumable,
-.kind-book,
-.kind-material,
-.kind-mount_pet,
-.kind-appearance,
-.kind-simple {
-  width: var(--tip-width, 220px);
-  max-width: 320px;
-  min-width: 170px;
-  font-size: 13px;
-  padding: 8px 12px;
-}
-.kind-consumable .row,
-.kind-book .row,
-.kind-material .row,
-.kind-mount_pet .row,
-.kind-appearance .row,
-.kind-simple .row {
-  min-height: 18px;
-  line-height: 18px;
-}
-.kind-consumable .row-spacer,
-.kind-book .row-spacer,
-.kind-material .row-spacer,
-.kind-mount_pet .row-spacer,
-.kind-appearance .row-spacer,
-.kind-simple .row-spacer {
-  height: 8px;
-  min-height: 8px;
-}
-
-/* GetSource tree: header flush; group indented; leaf deeper with small green arrows */
-.row-source-group {
-  padding-left: 12px;
-}
-.row-source-group .left {
-  flex: 1 1 auto;
-}
-
-.row-source {
-  align-items: center;
-  padding-left: 12px;
-}
+/* 获取途径层级：标签 x0，来源组 +16px，箭头子项 x0 */
+.row-source-group { padding-left: 16px; }
+.row-source { align-items: flex-start; }
 .row-source .source-arrow-css {
   position: relative;
   width: 11px;
   height: 10px;
   margin-right: 4px;
+  margin-top: 6px;
   flex: 0 0 11px;
 }
 .row-source .source-arrow-css::before,
@@ -191,15 +65,61 @@ body {
   height: 0;
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
-  border-left: 5px solid #00d24b;
+  border-left: 5px solid #00c848;
 }
 .row-source .source-arrow-css::before { left: 0; }
 .row-source .source-arrow-css::after { left: 5px; }
 
-.row-source .source-arrow {
-  width: 11px;
-  height: 10px;
+/* 使用途径行：小图标 + 文字 */
+.row-usage { align-items: center; }
+.row-usage .usage-icon {
+  width: 15px;
+  height: 15px;
   margin-right: 4px;
-  flex: 0 0 11px;
+  flex: 0 0 15px;
   object-fit: contain;
 }
+
+/* 镶嵌孔：17x17 方框（2px #999 描边）+ 灰字，行节距 23px */
+.row-diamond { align-items: flex-start; min-height: 23px; }
+.row-diamond .diamond-box {
+  width: 17px;
+  height: 17px;
+  border: 2px solid #999999;
+  margin-right: 3px;
+  margin-top: 2px;
+  flex: 0 0 17px;
+  box-sizing: border-box;
+}
+
+/* 坐骑技能行：28x28 图标浮动左栏，文字列悬挂缩进，块节距 45px */
+.row-horse-attr {
+  align-items: flex-start;
+  min-height: 28px;
+  margin-bottom: 17px;
+}
+.row-horse-attr:last-child { margin-bottom: 0; }
+.row-horse-attr .horse-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  object-fit: contain;
+}
+.row-horse-attr .horse-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.row-horse-attr .horse-title { color: #00c848; }
+.row-horse-attr .horse-desc { color: #ffffff; }
+
+/* 特殊属性效果节标题前的小图标占位（参考截图为 12x10 灰绿块） */
+.row-effect-ph { align-items: center; height: 14px; }
+.row-effect-ph .effect-ph {
+  width: 12px;
+  height: 10px;
+  background: #6f8783;
+  flex: 0 0 12px;
+}
+
+/* 空行：节距 22 -> 40 */
+.row-spacer { width: 100%; height: 18px; min-height: 18px; }

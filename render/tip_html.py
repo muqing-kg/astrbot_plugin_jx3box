@@ -8,7 +8,7 @@ import io
 from pathlib import Path
 from typing import Any
 
-from .html_util import build_t2i_options, content_width_for_kind, crop_render_whitespace, is_http_url, sanitize_css_color
+from .html_util import build_t2i_options, crop_render_whitespace, is_http_url, sanitize_css_color
 from .item_tip import (
     C_STRENGTH,
     C_WHITE,
@@ -20,7 +20,7 @@ from .item_tip import (
     is_true_equip,
 )
 
-_PLUGIN_DIR = Path(__file__).resolve().parent
+_PLUGIN_DIR = Path(__file__).resolve().parent.parent
 _TEMPLATE_DIR = _PLUGIN_DIR / "assets" / "tip_templates"
 _BASE_CSS = _TEMPLATE_DIR / "base.css"
 
@@ -104,9 +104,11 @@ ITEM_TIP_TMPL = """<!DOCTYPE html>
         {% if row.body %}<div class="horse-desc">{{ row.body }}</div>{% endif %}
       </div>
     </div>
+    {% elif row.kind == "effect_ph" %}
+    <div class="row row-effect-ph"><span class="effect-ph"></span></div>
     {% else %}
     <div class="row row-{{ row.kind }}">
-      <div class="left" style="color: {{ row.color }}">{{ row.text }}</div>
+      <div class="left{% if row.indent_dot %} indent-dot{% endif %}" style="color: {{ row.color }}{% if row.bold %}; font-weight: 700{% endif %}">{{ row.text }}</div>
       {% if row.right %}<div class="right" style="color: {{ row.right_color }}">{{ row.right }}</div>{% endif %}
     </div>
     {% endif %}
@@ -193,40 +195,6 @@ def _source_arrow_data_uri() -> str:
     """Deprecated: tip template uses CSS triangles (.source-arrow-css)."""
     return ""
 
-def _estimate_short_width(rows: list[dict[str, Any]]) -> int:
-    max_units = 0.0
-    for row in rows:
-        kind = row.get("kind")
-        text = str(row.get("text") or "")
-        right = str(row.get("right") or "")
-        units = 0.0
-        for ch in text + right:
-            o = ord(ch)
-            if ch.isspace():
-                units += 0.35
-            elif o > 0x2E80:
-                units += 1.0
-            else:
-                units += 0.55
-        if kind in {"usage", "diamond", "horse_attr"}:
-            units += 1.4
-        if kind == "horse_attr":
-            body = str(row.get("body") or "")
-            for ch in body:
-                o = ord(ch)
-                if ch.isspace():
-                    units += 0.35
-                elif o > 0x2E80:
-                    units += 1.0
-                else:
-                    units += 0.55
-        if right:
-            units += 1.2
-        max_units = max(max_units, units)
-    width = int(max_units * 13 + 24 + 10)
-    return max(170, min(320, width))
-
-
 def _load_css() -> str:
     """Load tip CSS. Clarity comes from device_scale_factor=2 + CSS (not 8MB font embed)."""
     if _BASE_CSS.is_file():
@@ -242,12 +210,13 @@ def build_tip_template_data(item: dict[str, Any], kind: str | None = None) -> di
 
     raw_rows = _build_rows(item)
     has_set = isinstance(item.get("Set"), dict) and bool(item.get("Set"))
-    tip_width = None if kind in {"equip", "weapon", "furniture"} else _estimate_short_width(raw_rows)
+    tip_width = None  # 统一 375px 定宽（对齐游戏 tooltip 规格）
 
     rows: list[dict[str, Any]] = []
     for row in raw_rows:
         rkind = str(row.get("kind") or "normal")
-        text = _escape(row.get("text") or "")
+        raw_text = str(row.get("text") or "")
+        text = _escape(raw_text)
         color = sanitize_css_color(row.get("color") or C_WHITE, C_WHITE)
         right = str(row.get("right") or "")
         right_color = sanitize_css_color(
@@ -262,6 +231,8 @@ def build_tip_template_data(item: dict[str, Any], kind: str | None = None) -> di
             "right_color": right_color,
             "icon_uri": "",
             "arrow": bool(row.get("arrow")),
+            "bold": bool(row.get("bold")),
+            "indent_dot": raw_text.startswith("·"),
             "title": "",
             "body": "",
         }
@@ -286,7 +257,7 @@ def build_tip_template_data(item: dict[str, Any], kind: str | None = None) -> di
             entry["arrow"] = True
         rows.append(entry)
 
-    viewport_width = content_width_for_kind(kind, tip_width)
+    viewport_width = 375
     return {
         "css": _load_css(),
         "kind": kind,
@@ -382,8 +353,7 @@ async def render_item_tip_html(
     returns: image url or local path depending on return_url.
     """
     data = build_tip_template_data(item, kind=kind)
-    width = int(data.get("viewport_width") or content_width_for_kind(data.get("kind") or "simple", data.get("tip_width")))
-    opts = build_t2i_options(width=width, base=TIP_RENDER_OPTIONS, extra=options)
+    opts = build_t2i_options(width=375, base=TIP_RENDER_OPTIONS, extra=options)
     # AstrBot Star.html_render(tmpl, data, return_url=True, options=None)
     result = await star.html_render(ITEM_TIP_TMPL, data, return_url=return_url, options=opts)
     if return_url or not result:

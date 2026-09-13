@@ -6,6 +6,7 @@ import asyncio
 import base64
 import html as html_lib
 import io
+import re
 from pathlib import Path
 from typing import Any
 
@@ -18,19 +19,19 @@ from .renderers import (
     parse_tags,
 )
 
-_PLUGIN_DIR = Path(__file__).resolve().parent
+_PLUGIN_DIR = Path(__file__).resolve().parent.parent
 _TEMPLATE_DIR = _PLUGIN_DIR / "assets" / "quest_templates"
 _BASE_CSS = _TEMPLATE_DIR / "base.css"
 
 # Light-theme tag colors closer to jx3box quest page
 _LIGHT_TAG_COLORS = {
-    "G": "#16a34a",
-    "F171": "#d97706",
+    "G": "#000000",      # 段落正文
+    "F171": "#d97706",   # 物品链接
     "F172": "#dc2626",
-    "F173": "#2563eb",
-    "F174": "#059669",
-    "N": "#d97706",
-    "DEFAULT": "#3c4048",
+    "F173": "#6C967E",   # NPC/地点链接（灰绿）
+    "F174": "#8F9790",   # 叙述/旁白（灰）
+    "N": "#000000",      # 玩家名（黑）
+    "DEFAULT": "#000000",
 }
 
 QUEST_RENDER_OPTIONS: dict[str, Any] = {
@@ -52,120 +53,101 @@ QUEST_CARD_TMPL = """<!DOCTYPE html>
 <body>
 <div id="quest-root">
   <div class="q-head">
-    <div class="q-title-wrap">
-      <div class="q-title">{{ name }}<span class="q-id">(ID:{{ qid }})</span></div>
-      {% if start_line %}<div class="q-meta"><span class="label">任务起点:</span> {{ start_line }}</div>{% endif %}
-      {% if end_line %}<div class="q-meta"><span class="label">任务终点:</span> {{ end_line }}</div>{% endif %}
-      {% if tags %}
-      <div class="q-tags">
-        {% for t in tags %}<span class="q-tag">{{ t }}</span>{% endfor %}
-      </div>
-      {% endif %}
-    </div>
-    {% if difficulty %}<div class="q-badge">{{ difficulty }}</div>{% endif %}
+    <span class="q-title{% if title_dark %} dark{% endif %}">{{ name_main }}</span>{% if name_suffix %}<span class="q-suffix">{{ name_suffix }}</span>{% endif %}
+    <span class="q-id">(ID:{{ qid }})</span>
   </div>
 
-  <hr class="q-divider"/>
+  {% if can_share %}
+  <div class="q-share">
+    <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="2.5" width="14" height="15.5" rx="2" fill="#e8e2d0" stroke="#988060"/><rect x="6.5" y="1" width="7" height="3" rx="1" fill="#988060"/><path d="M6 8.5h8M6 11.5h8M6 14.5h5" stroke="#b0a080" stroke-width="1.4" fill="none"/></svg>
+    <span class="txt">可分享任务</span>
+  </div>
+  {% endif %}
+
+  {% if start_line.where or end_line.where %}
+  <div class="q-nodes">
+    {% if start_line.where %}<div class="q-node"><span class="label">任务起点:</span> <span class="where">{{ start_line.where }}</span>{% if start_line.icon_uri %}<img class="icon" src="{{ start_line.icon_uri }}" alt=""/>{% endif %}{% if start_line.nid %}<span class="nid">（{{ start_line.id_label }}：{{ start_line.nid }}）</span>{% endif %}</div>{% endif %}
+    {% if end_line.where %}<div class="q-node"><span class="label">任务终点:</span> <span class="where">{{ end_line.where }}</span>{% if end_line.nid %}<span class="nid">（{{ end_line.id_label }}：{{ end_line.nid }}）</span>{% endif %}</div>{% endif %}
+  </div>
+  <div class="q-rule-dashed"></div>
+  {% endif %}
 
   {% if objective_html or need_items or kill_npcs %}
-  <section class="q-section">
+  <div class="q-section">
     <div class="q-section-title"><span class="tri"></span>任务目标</div>
+    <div class="q-rule-dotted"></div>
     {% if objective_html %}<div class="q-body">{{ objective_html | safe }}</div>{% endif %}
-    {% for it in need_items %}
-    <div class="item-row">
-      <span class="act">收集</span>
-      {% if it.icon_uri %}<img class="icon" src="{{ it.icon_uri }}" alt=""/>{% else %}<span class="icon-ph"></span>{% endif %}
-      <span class="item-main">
-        <span class="name" style="color:{{ it.color }}">{{ it.name }}</span>
-        <span class="amt">× {{ it.amount }}</span>
-      </span>
-    </div>
+    {% for v in quest_values %}
+    <div class="q-sub">{{ v.name }} × {{ v.amount }}</div>
     {% endfor %}
     {% for k in kill_npcs %}
-    <div class="obj-line"><span class="prefix">击败</span><span>{{ k }}</span></div>
+    <div class="q-sub">击杀 <b>{{ k.name }}</b> × {{ k.amount }}</div>
     {% endfor %}
-  </section>
-  <hr class="q-divider"/>
+    {% for it in need_items %}
+    <div class="q-collect">
+      <span class="act">收集</span>
+      {% if it.icon_uri %}<img class="cicon" src="{{ it.icon_uri }}" alt=""/>{% endif %}
+      <span class="iname">{{ it.name }}</span>
+      <span class="amt">× {{ it.amount }}</span>
+    </div>
+    {% endfor %}
+  </div>
   {% endif %}
 
   {% if description_html %}
-  <section class="q-section">
+  <div class="q-section">
     <div class="q-section-title"><span class="tri"></span>任务描述</div>
+    <div class="q-rule-dotted"></div>
     <div class="q-body">{{ description_html | safe }}</div>
-  </section>
-  <hr class="q-divider"/>
+  </div>
   {% endif %}
 
   {% if offer_items %}
-  <section class="q-section">
+  <div class="q-section">
     <div class="q-section-title"><span class="tri"></span>提供物品</div>
-    {% for it in offer_items %}
-    <div class="item-row" style="margin-left:0">
-      {% if it.icon_uri %}<img class="icon" src="{{ it.icon_uri }}" alt=""/>{% else %}<span class="icon-ph"></span>{% endif %}
-      <span class="item-main">
-        <span class="name" style="color:{{ it.color }}">{{ it.name }}</span>
-        <span class="amt">× {{ it.amount }}</span>
-      </span>
+    <div class="q-rule-dotted"></div>
+    <div class="q-offer">
+      {% for it in offer_items %}{% if it.icon_uri %}<img class="oicon" src="{{ it.icon_uri }}" alt=""/>{% endif %}{% endfor %}
     </div>
-    {% endfor %}
-  </section>
-  <hr class="q-divider"/>
+  </div>
   {% endif %}
 
   {% if reward_cards %}
-  <section class="q-section">
+  <div class="q-section">
     <div class="q-section-title"><span class="tri"></span>任务奖励</div>
-    <div class="reward-extras">
-      {% for r in reward_cards if (not r.is_card) and r.kind in ["item_group_tip", "exp", "money", "affect"] %}
-      {% if r.kind == "item_group_tip" %}<div class="reward-extra reward-tip">{{ r.title }}</div>{% endif %}
-      {% endfor %}
-    </div>
-    <div class="reward-grid">
+    <div class="q-rule-dotted"></div>
+    {% for r in reward_cards if (not r.is_card) and r.kind == "item_group_tip" %}
+    <div class="q-sub group-tip">{{ r.title }}</div>
+    {% endfor %}
+    <div class="q-rewards">
       {% for r in reward_cards if r.is_card %}
-      <div class="reward-card">
-        {% if r.icon_uri %}<img class="reward-icon" src="{{ r.icon_uri }}" alt=""/>{% else %}<span class="reward-icon-ph"></span>{% endif %}
-        <div class="reward-text">
-          <div class="reward-title">{{ r.title }}</div>
-          {% if r.amount %}<div class="reward-amt">{{ r.amount }}</div>{% endif %}
+      <div class="q-reward">
+        {% if r.icon_uri %}<img class="ricon" src="{{ r.icon_uri }}" alt=""/>{% endif %}
+        <div class="rtext">
+          <div class="rname{% if r.is_item %} item{% endif %}">{{ r.title }}</div>
+          {% if r.amount %}<div class="ramt">{{ r.amount }}</div>{% endif %}
         </div>
       </div>
       {% endfor %}
     </div>
-    <div class="reward-extras">
-      {% for r in reward_cards if (not r.is_card) and r.kind not in ["item_group_tip"] %}
-      <div class="reward-extra">{% if r.html %}{{ r.html | safe }}{% else %}{{ r.title }}{% endif %}</div>
-      {% endfor %}
-    </div>
-  </section>
-  <hr class="q-divider"/>
+    {% for r in reward_cards if (not r.is_card) and r.kind not in ["item_group_tip"] %}
+    <div class="q-sub">{% if r.html %}{{ r.html | safe }}{% else %}{{ r.title }}{% endif %}</div>
+    {% endfor %}
+  </div>
   {% endif %}
 
-  {% if chain_items or branch_items %}
-  <section class="q-section chain-wrap">
-    {% if chain_items %}
-    <div class="chain-label">任务链</div>
-    <div class="chain-line">
-      {% for c in chain_items %}
-        {% if not loop.first %}<span class="chain-sep">»</span>{% endif %}
-        <span class="chain-item{% if c.current %} current{% endif %}">[{{ c.name }}]</span>
-      {% endfor %}
-    </div>
-    {% endif %}
-    {% if branch_items %}
-    <div class="chain-label branch-label">任务分支</div>
-    <div class="chain-line branch-line">
-      {% for c in branch_items %}
-        {% if not loop.first %}<span class="chain-sep">»</span>{% endif %}
-        <span class="chain-item{% if c.current %} current{% endif %}">[{{ c.name }}]</span>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </section>
+  {% if chain_items %}
+  <div class="q-chain-sep"><span>⛓ 任务链</span></div>
+  <div class="q-chain">
+    {% for c in chain_items %}
+      {% if not loop.first %}<span class="chain-sep">》</span>{% endif %}
+      <span class="chain-item{% if c.current %} current{% endif %}">[{{ c.name }}]</span>
+    {% endfor %}
+  </div>
   {% endif %}
 </div>
 </body>
-</html>
-"""
+</html>"""
 
 
 def _escape(text: Any) -> str:
@@ -178,18 +160,14 @@ def _load_css() -> str:
     return ""
 
 
-def _npc_line(node: Any) -> str:
+def _npc_parts(node: Any) -> dict[str, str]:
     if not isinstance(node, dict):
-        return ""
+        return {"where": "", "nid": ""}
     map_name = str(node.get("mapName") or "").strip()
     name = str(node.get("name") or "").strip()
+    where = " - ".join([x for x in [map_name, name] if x])
     nid = node.get("id")
-    left = "·".join([x for x in [map_name, name] if x])
-    if not left:
-        return ""
-    if nid not in (None, ""):
-        return f"{left}（NPCID: {nid}）"
-    return left
+    return {"where": where, "nid": "" if nid in (None, "") else str(nid)}
 
 
 def _segments_to_html(raw: Any) -> str:
@@ -204,22 +182,29 @@ def _segments_to_html(raw: Any) -> str:
                 parts.append(f"<p>{_escape(para)}</p>")
         return "".join(parts)
 
-    # remap colors to light theme
     html_parts: list[str] = []
     buf: list[str] = []
+
+    def _flush() -> None:
+        para = "".join(buf).strip()
+        if para:
+            html_parts.append(f"<p>{para}</p>")
+        elif html_parts:
+            html_parts.append("<p><br/></p>")
+        buf.clear()
+
+    injected_n = False
     for text, color in segs:
         if text == "\n":
-            para = "".join(buf).strip()
-            if para:
-                html_parts.append(f"<p>{para}</p>")
-            elif html_parts:
-                html_parts.append("<p><br/></p>")
-            buf = []
+            _flush()
+            injected_n = False
             continue
+        # <N> 为玩家名占位：站点渲染为「侠士」前缀（每段一次）
+        if color == "#F6D36A" and not injected_n and text.startswith(("，", ",")):
+            text = "侠士" + text
+            injected_n = True
         c = color
-        # map dark-theme defaults
         if color in {"#D7DCE5", "#7FDBA8", "#FFD76A", "#FF7A6B", "#6EC8FF", "#B7F0B0", "#F6D36A"}:
-            # reverse map via approximate
             rev = {
                 "#7FDBA8": _LIGHT_TAG_COLORS["G"],
                 "#FFD76A": _LIGHT_TAG_COLORS["F171"],
@@ -233,11 +218,14 @@ def _segments_to_html(raw: Any) -> str:
         elif color == _LIGHT_TAG_COLORS.get("DEFAULT") or not color:
             c = _LIGHT_TAG_COLORS["DEFAULT"]
         c = sanitize_css_color(c, _LIGHT_TAG_COLORS["DEFAULT"])
-        # If parse_tags already gave hex from _TAG_COLORS dark, remapped above
-        buf.append(f'<span style="color:{c}">{_escape(text)}</span>')
-    para = "".join(buf).strip()
-    if para:
-        html_parts.append(f"<p>{para}</p>")
+        pieces = str(text).split("\n")
+        for i, piece in enumerate(pieces):
+            if i > 0:
+                _flush()
+                injected_n = False
+            if piece:
+                buf.append(f'<span style="color:{c}">{_escape(piece)}</span>')
+    _flush()
     return "".join(html_parts)
 
 
@@ -411,7 +399,7 @@ def _item_rows(raw_list: Any, item_meta: dict[str, dict[str, Any]] | None) -> li
                 "id": iid,
                 "name": _escape(m.get("name") or iid),
                 "amount": amount,
-                "color": sanitize_css_color(m.get("color") or "#2563eb", "#2563eb"),
+                "color": "#909090",
                 "icon_uri": m.get("icon_uri") or "",
             }
         )
@@ -504,6 +492,7 @@ async def _format_reward_cards(
                 "amount": _escape(f"× {c}"),
                 "icon_uri": _reward_icon_data_uri(typ),
                 "is_card": True,
+                "is_item": False,
                 "html": "",
                 "item_id": "",
             })
@@ -606,13 +595,15 @@ async def _format_reward_cards(
                 iid = str(it.get("id") or "").strip()
                 if not iid:
                     continue
-                amt = _escape(it.get("amount", 1))
+                raw_amt = str(it.get("amount", 1))
+                amount = "" if raw_amt == "1" else f"× {raw_amt}"
                 cards.append({
                     "kind": "item",
                     "title": iid,  # replaced later with real name
-                    "amount": f"× {amt}",
+                    "amount": amount,
                     "icon_uri": "",
                     "is_card": True,
+                    "is_item": True,
                     "html": "",
                     "item_id": iid,
                 })
@@ -643,29 +634,31 @@ async def build_quest_template_data(
 
     qid = quest.get("id") or desc.get("QuestID") or ""
     name = str(quest.get("name") or desc.get("QuestName") or "未知任务")
-    difficulty = quest.get("difficulty") or desc.get("Difficulty") or ""
-    difficulty = str(difficulty).strip() if difficulty not in (None, "") else ""
 
-    start_line = _npc_line(quest.get("start") or {})
-    end_line = _npc_line(quest.get("end") or {})
-
-    quest_type = str(quest.get("questType") or "").strip()
-    school_name = str(quest.get("schoolName") or "").strip()
-    tags: list[str] = []
-    type_label = _QUEST_TYPE_LABELS.get(quest_type, quest_type)
-    if type_label:
-        tags.append(type_label)
-    if school_name:
-        tags.append(school_name)
-    if quest.get("canShare"):
-        tags.append("可共享")
-    if quest.get("canAssist"):
-        tags.append("可援助")
-    # unique
-    uniq: list[str] = []
-    for t in tags:
-        if t and t not in uniq:
-            uniq.append(t)
+    start_line = _npc_parts(quest.get("start") or {})
+    end_line = _npc_parts(quest.get("end") or {})
+    start_node = quest.get("start") if isinstance(quest.get("start"), dict) else {}
+    if start_node.get("type") == "item":
+        # 物品起点：地图名保留，NPCID 改为物品ID，并尝试带图标
+        item_id = str(start_node.get("id") or "")
+        start_line["where"] = f"{start_node.get('mapName') or ''} - ".replace(" -  - ", " - ")
+        start_line["nid"] = item_id
+        start_line["id_label"] = "物品ID"
+        icon_uri = ""
+        if api is not None and item_id:
+            try:
+                detail = await api.get_item(item_id)
+                icon_id = (detail or {}).get("IconID")
+                if icon_id is not None:
+                    icon_uri = await _fetch_icon_data_uri(icon_id, api)
+            except Exception:
+                icon_uri = ""
+        start_line["icon_uri"] = icon_uri
+    else:
+        start_line.setdefault("id_label", "NPCID")
+        start_line.setdefault("icon_uri", "")
+    end_line.setdefault("id_label", "NPCID")
+    end_line.setdefault("icon_uri", "")
 
     objective_raw = desc.get("Objective") or quest.get("target") or ""
     description_raw = desc.get("Description") or quest.get("description") or ""
@@ -675,14 +668,21 @@ async def build_quest_template_data(
     need_items = _item_rows(quest.get("needItems") or [], item_meta)
     offer_items = _item_rows(quest.get("offerItems") or [], item_meta)
 
-    kill_npcs: list[str] = []
+    quest_values: list[dict[str, str]] = []
+    for v in quest.get("questValues") or []:
+        if isinstance(v, dict) and str(v.get("str") or "").strip():
+            quest_values.append(
+                {"name": _escape(str(v.get("str"))), "amount": _escape(v.get("value", 1))}
+            )
+
+    kill_npcs: list[dict[str, str]] = []
     for k in quest.get("killNpcs") or []:
         if isinstance(k, dict):
             n = str(k.get("name") or k.get("id") or "").strip()
         else:
             n = str(k or "").strip()
         if n:
-            kill_npcs.append(_escape(n))
+            kill_npcs.append({"name": _escape(n), "amount": "1"})
 
     rewards = quest.get("rewards") if isinstance(quest.get("rewards"), list) else []
     reward_cards = await _format_reward_cards(rewards, api=api)
@@ -729,21 +729,39 @@ async def build_quest_template_data(
         return result
 
     chain_items = _chain_rows(chain_obj.get("current") if isinstance(chain_obj, dict) else [])
+    if len(chain_items) == 1 and chain_items[0]["current"]:
+        chain_items = []  # 链上只有自己时不展示任务链
     branch_items = _chain_rows(chain_obj.get("branch") if isinstance(chain_obj, dict) else [])
+
+    qtype = str(quest.get("questType") or "").strip()
+    if "【" not in name and (qtype == "repeat" or str(quest.get("difficulty") or "") == "重复"):
+        name = name + "【重复】"
+    desc_name = str(desc.get("QuestName") or "")
+    if "【" not in name and "【" in desc_name:
+        m2 = re.search(r"(【[^【】]+】)\s*$", desc_name)
+        if m2:
+            name = name + m2.group(1)
+    m = re.match(r"^(.*?)【([^【】]+)】\s*$", name)
+    if m:
+        name_main, name_suffix = m.group(1), f"【{m.group(2)}】"
+    else:
+        name_main, name_suffix = name, ""
 
     return {
         "css": _load_css(),
         "viewport_width": content_width_for_kind("quest", quest=True),
         "qid": _escape(qid),
-        "name": _escape(name),
-        "difficulty": _escape(difficulty),
-        "start_line": _escape(start_line),
-        "end_line": _escape(end_line),
-        "tags": [_escape(t) for t in uniq],
+        "name_main": _escape(name_main),
+        "name_suffix": _escape(name_suffix),
+        "title_dark": not bool(name_suffix) and bool(quest.get("canShare")),
+        "can_share": bool(quest.get("canShare")),
+        "start_line": start_line,
+        "end_line": end_line,
         "objective_html": objective_html,
         "description_html": description_html,
         "need_items": need_items,
         "offer_items": offer_items,
+        "quest_values": quest_values,
         "kill_npcs": kill_npcs,
         "reward_cards": reward_cards,
         "chain_items": chain_items,
@@ -767,12 +785,12 @@ async def build_quest_html(
             "<!DOCTYPE html><html><head><meta charset='utf-8'/><style>",
             data["css"],
             "</style></head><body><div id='quest-root'>",
-            f"<div class='q-title'>{data['name']}<span class='q-id'>(ID:{data['qid']})</span></div>",
+            f"<div class='q-title'>{data['name_main']}<span class='q-id'>(ID:{data['qid']})</span></div>",
         ]
-        if data["start_line"]:
-            parts.append(f"<div class='q-meta'>任务起点: {data['start_line']}</div>")
-        if data["end_line"]:
-            parts.append(f"<div class='q-meta'>任务终点: {data['end_line']}</div>")
+        if data["start_line"].get("where"):
+            parts.append(f"<div class='q-node'><span class='label'>任务起点:</span> {data['start_line']['where']}</div>")
+        if data["end_line"].get("where"):
+            parts.append(f"<div class='q-node'><span class='label'>任务终点:</span> {data['end_line']['where']}</div>")
         if data["objective_html"]:
             parts.append("<div class='q-section-title'>任务目标</div>")
             parts.append(f"<div class='q-body'>{data['objective_html']}</div>")

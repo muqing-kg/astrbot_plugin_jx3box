@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PIL import ImageFont
 
-_PLUGIN_DIR = Path(__file__).resolve().parent
+_PLUGIN_DIR = Path(__file__).resolve().parent.parent
 
 
 def _candidates(bold: bool = False) -> list[str]:

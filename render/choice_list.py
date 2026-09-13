@@ -37,7 +37,7 @@ QUALITY_COLORS = {
     5: "#FFA500",
 }
 
-_ASSETS = Path(__file__).resolve().parent / "assets" / "choice_list"
+_ASSETS = Path(__file__).resolve().parent.parent / "assets" / "choice_list"
 _BG_CANDIDATES = (
     _ASSETS / "choice_bg.png",
     _ASSETS / "choice_bg.jpg",

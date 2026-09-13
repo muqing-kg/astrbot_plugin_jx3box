@@ -1,241 +1,134 @@
-/* JX3BOX-like quest detail card (light wiki style) */
+/* 剑网3魔盒任务页 1:1 复刻（白底通栏 1060px 内容列） */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
-  background: transparent;
+  background: #ffffff;
   margin: 0;
   padding: 0;
-  width: fit-content;
-  max-width: fit-content;
-  height: fit-content;
-  font-family: "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  color: #2b2f36;
 }
-body {
-  display: inline-block;
-  width: fit-content;
-  max-width: fit-content;
-}
+body { display: inline-block; }
 
 #quest-root {
-  width: 860px;
-  max-width: 860px;
+  display: inline-block;
+  width: 1092px;            /* 1060 内容列 + 左右各 16px */
   background: #ffffff;
-  border: 1px solid #e6e8ee;
-  border-radius: 8px;
-  padding: 22px 26px 20px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  padding: 20px 16px 40px;
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #000000;
   overflow: hidden;
 }
 
-.q-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 10px;
-}
-.q-title-wrap { min-width: 0; flex: 1; }
+/* ── 标题区 ───────────────────────────── */
+.q-head { display: flex; align-items: baseline; gap: 8px; }
 .q-title {
-  font-size: 28px;
-  line-height: 1.25;
+  font-size: 20px;
   font-weight: 700;
-  color: #1f2329;
+  color: #4840e0;
 }
-.q-id {
-  margin-left: 8px;
-  font-size: 14px;
-  font-weight: 400;
-  color: #8b93a7;
-}
-.q-badge {
-  flex: 0 0 auto;
-  font-size: 13px;
-  color: #5b6475;
-  border: 1px solid #d7dce5;
-  border-radius: 16px;
-  padding: 6px 12px;
-  background: #f7f8fa;
-  white-space: nowrap;
-}
-.q-meta {
-  margin-top: 8px;
-  font-size: 14px;
-  line-height: 1.7;
-  color: #c9893a;
-}
-.q-meta .label { color: #c9893a; }
-.q-tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
-.q-tag {
-  font-size: 12px;
-  color: #5b6475;
-  background: #f2f4f8;
-  border: 1px solid #e1e5ee;
-  border-radius: 999px;
-  padding: 3px 10px;
-}
+.q-title.dark { color: #0a0a0a; }
+.q-suffix { font-size: 20px; color: #909098; }
+.q-id { font-size: 14px; font-weight: 400; color: #909090; }
 
-.q-divider {
-  border: 0;
-  border-top: 1px dashed #e6e8ee;
-  margin: 14px 0;
+/* 可分享任务横幅 */
+.q-share {
+  margin-top: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #ac9d84;
+  border-radius: 4px;
+  padding: 4px 12px;
 }
+.q-share svg { width: 20px; height: 20px; display: block; }
+.q-share .txt { color: #3c4248; }
 
-.q-section { margin-top: 4px; }
+/* ── 起终点 ───────────────────────────── */
+.q-nodes { margin-top: 23px; }
+.q-node { margin-bottom: 20px; padding-left: 19px; font-size: 14px; }
+.q-node .label { color: #886838; }
+.q-node .where { color: #000000; font-weight: 700; }
+.q-node .nid { color: #909090; }
+.q-node .icon { width: 31px; height: 31px; vertical-align: middle; margin: -8px 4px; }
+
+.q-rule-dashed { border-top: 1px dashed #dddddd; margin-top: 12px; }
+
+/* ── 区块 ─────────────────────────────── */
+.q-section { margin-top: 26px; }
 .q-section-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #3a4050;
-  margin: 4px 0 10px;
+  gap: 10px;
+  padding-left: 5px;
+  color: #a89c84;
+  font-size: 12px;
 }
 .q-section-title .tri {
-  width: 0; height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 7px solid #f0a040;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid #a89c84;
 }
-.q-body {
-  font-size: 14px;
-  line-height: 1.85;
-  color: #3c4048;
-  padding-left: 4px;
-}
-.q-body p { margin: 0 0 8px; }
-.q-body .seg { white-space: pre-wrap; }
+.q-rule-dotted { border-top: 1px dotted #d5cec1; margin-top: 14px; }
 
-.obj-line {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0 0 8px;
-  font-size: 14px;
-  line-height: 1.7;
-  color: #3c4048;
-}
-.obj-line .prefix { color: #8b93a7; min-width: 2em; }
-.item-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: nowrap;
-  gap: 8px;
-  width: max-content;
-  max-width: 100%;
-  margin: 6px 0 6px 1.5em;
-  font-size: 14px;
-  line-height: 1.5;
-}
-.item-row .act { color: #8b93a7; flex: 0 0 auto; white-space: nowrap; }
-.item-row .icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  border: 1px solid #e1e5ee;
-  background: #f7f8fa;
-  object-fit: contain;
-  flex: 0 0 28px;
-}
-.item-row .icon-ph {
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  border: 1px solid #e1e5ee;
-  background: linear-gradient(135deg, #f2f4f8, #e8ecf3);
-  flex: 0 0 28px;
-}
-.item-row .name { font-weight: 600; flex: 0 0 auto; white-space: nowrap; max-width: 360px; overflow: hidden; text-overflow: ellipsis; }
-.item-row .amt { color: #5b6475; flex: 0 0 auto; margin-left: 2px; white-space: nowrap; }
+/* ── 正文 ─────────────────────────────── */
+.q-body { margin-top: 22px; font-size: 14px; line-height: 32px; color: #000000; }
+.q-body p { text-indent: 30px; margin: 0; }
 
-.reward-list { padding-left: 4px; }
-.reward-list li {
-  list-style: none;
-  margin: 4px 0;
-  font-size: 14px;
-  color: #3c4048;
-}
-.reward-list li::before {
-  content: "•";
-  color: #c9893a;
-  margin-right: 8px;
-}
+/* 次要行（击杀 / 收集 / 提示语）：缩进 22-23px */
+.q-sub { margin: 14px 0 0 22px; color: #7e7e7e; font-size: 14px; }
+.q-sub b { font-weight: 700; }
+.q-sub.group-tip { color: #000000; margin-left: 18px; margin-top: 22px; }
 
-.chain-wrap { margin-top: 8px; }
-.chain-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  color: #8b93a7;
-  font-size: 13px;
-  margin: 8px 0 10px;
-}
-.chain-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 4px;
-  font-size: 13px;
-  line-height: 1.7;
-}
-.chain-item {
-  color: #7c3aed;
-  text-decoration: none;
-}
-.chain-item.current {
-  color: #d97706;
-  font-weight: 700;
-}
-.chain-sep { color: #c4cad6; margin: 0 2px; }
-
-.muted { color: #8b93a7; }
-
-.reward-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px 28px;
-  padding: 4px 2px 8px;
-}
-.reward-card {
+.q-collect {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 160px;
+  margin: 14px 0 0 22px;
+  color: #808080;
+  font-size: 14px;
 }
-.reward-icon, .reward-icon-ph {
-  width: 48px;
-  height: 48px;
-  border-radius: 6px;
-  border: 1px solid #e1e5ee;
-  background: #f7f8fa;
-  object-fit: contain;
-  flex: 0 0 40px;
+.q-collect .cicon { width: 30px; height: 30px; object-fit: contain; }
+.q-collect .iname { color: #909090; }
+.q-collect .amt { color: #808080; }
+
+/* 提供物品：38px 裸图标 */
+.q-offer { margin: 14px 0 0 18px; }
+.q-offer .oicon { width: 38px; height: 38px; object-fit: contain; display: block; margin-bottom: 8px; }
+
+/* ── 奖励 ─────────────────────────────── */
+.q-rewards { display: flex; flex-wrap: wrap; margin-top: 20px; }
+.q-reward {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 352px;
+  margin-bottom: 14px;
 }
-.reward-title { font-size: 14px; color: #2b2f36; font-weight: 600; }
-.reward-amt { font-size: 13px; color: #5b6475; margin-top: 2px; }
-.reward-extras { padding-left: 2px; }
-.reward-extra { font-size: 13px; color: #5b6475; margin: 4px 0; }
+.q-reward .ricon { width: 45px; height: 45px; object-fit: contain; }
+.q-reward .rtext { min-width: 0; }
+.q-reward .rname { font-size: 16px; color: #000000; }
+.q-reward .rname.item { color: #00d24b; }
+.q-reward .ramt { font-size: 14px; color: #000000; margin-top: 12px; }
 
-.price-part { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
-.price-val { font-size: 12px; line-height: 18px; color: #333; }
-.price-icon { width: 18px; height: 18px; object-fit: contain; vertical-align: middle; }
-.reward-icon, .reward-icon-ph { width: 42px; height: 42px; }
-
-.item-row .item-main {
-  display: inline-flex;
+/* ── 任务链 ───────────────────────────── */
+.q-chain-sep {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
-  min-width: 0;
+  margin-top: 34px;
+  color: #303030;
+  font-size: 14px;
 }
+.q-chain-sep::before,
+.q-chain-sep::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #dcdfe6;
+}
+.q-chain-sep span { padding: 0 12px; }
 
-.branch-label {
-  margin-top: 12px;
-  color: #64748b;
-}
-.branch-line {
-  border-left: 3px solid #94a3b8;
-  padding-left: 10px;
-}
+.q-chain { margin-top: 28px; font-size: 14px; }
+.chain-item { color: #8b4dff; }
+.chain-item.current { color: #fa9907; font-weight: 700; }
+.chain-sep { color: #a0a8b8; margin: 0 10px; }

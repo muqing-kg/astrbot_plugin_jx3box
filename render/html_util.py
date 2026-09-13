@@ -36,20 +36,9 @@ def is_http_url(value: Any) -> bool:
 
 
 def content_width_for_kind(kind: str, tip_width: int | None = None, *, quest: bool = False) -> int:
-    """Best-effort content width for t2i viewport (avoid default 800px white band)."""
-    if quest:
-        return 860
-    k = str(kind or "")
-    if k in {"equip", "weapon"}:
-        return 341
-    if k == "furniture":
-        return 345
-    if tip_width:
-        try:
-            return max(170, min(320, int(tip_width)))
-        except Exception:
-            pass
-    return 220
+    """Fixed content widths matched to the 1:1 reference specs (tip=375, quest=1060)."""
+    _ = kind, tip_width
+    return 1092 if quest else 375
 
 
 def build_t2i_options(
@@ -201,8 +190,8 @@ def crop_render_whitespace(
 
     cropped = img.crop((left, top, right + 1, bottom + 1))
     if dark_panel:
-        # tip: keep dark look; composite transparent onto tip panel green-black
-        bg = Image.new("RGBA", cropped.size, (15, 34, 34, 255))
+        # tip: keep dark look; composite transparent onto tip panel #2b3d3d
+        bg = Image.new("RGBA", cropped.size, (43, 61, 61, 255))
         bg.paste(cropped, mask=cropped.split()[-1])
         out = bg.convert("RGB")
     else:
