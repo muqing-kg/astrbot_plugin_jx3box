@@ -31,6 +31,23 @@ def clean_desc(text: str | None) -> str:
     return s.strip()
 
 
+def _dedup_keep_order(rows: list[dict[str, Any]], per: int) -> list[dict[str, Any]]:
+    """搜索接口按名称以外字段模糊命中时的兜底：去重并保留原始相关度排序。"""
+    seen: set[str] = set()
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        rid = str(r.get("id") or r.get("ID") or "")
+        key = rid or str(r.get("name") or r.get("Name") or "")
+        if key and key in seen:
+            continue
+        if key:
+            seen.add(key)
+        out.append(r)
+    return out[: per if isinstance(per, int) and per > 0 else 50]
+
+
 def filter_name_contains(items: list[dict[str, Any]], keyword: str, name_key: str = "Name") -> list[dict[str, Any]]:
     kw = (keyword or "").strip().lower()
     out: list[dict[str, Any]] = []
@@ -62,7 +79,10 @@ class Jx3Api:
             params={"keyword": keyword, "client": self.client, "per": per},
         )
         rows = (((data or {}).get("data") or {}).get("data")) or []
-        return filter_name_contains(rows, keyword, "Name")
+        kept = filter_name_contains(rows, keyword, "Name")
+        if kept or not rows:
+            return kept
+        return _dedup_keep_order(rows, per)
 
     async def get_item(self, item_id: str) -> dict[str, Any]:
         """Fetch item detail. Raises on transport/API failure; empty dict if missing body."""
@@ -86,7 +106,10 @@ class Jx3Api:
                 params={"keyword": keyword, "client": self.client, "per": per},
             )
             rows = (((data or {}).get("data") or {}).get("achievements")) or []
-        return filter_name_contains(rows, keyword, "Name")
+        kept = filter_name_contains(rows, keyword, "Name")
+        if kept or not rows:
+            return kept
+        return _dedup_keep_order(rows, per)
 
     async def search_quests(self, keyword: str, per: int = 30) -> list[dict[str, Any]]:
         data = await self.http.get_json(
@@ -100,7 +123,10 @@ class Jx3Api:
             rows = rows.get("byKeyword") or rows.get("list") or []
         if not isinstance(rows, list):
             rows = payload.get("data") if isinstance(payload.get("data"), list) else []
-        return filter_name_contains(rows or [], keyword, "name")
+        kept = filter_name_contains(rows or [], keyword, "name")
+        if kept or not rows:
+            return kept
+        return _dedup_keep_order(rows or [], per)
 
     async def get_quest(self, quest_id: int | str) -> dict[str, Any]:
         data = await self.http.get_json(f"{NODE}/quest/", params={"id": quest_id})
