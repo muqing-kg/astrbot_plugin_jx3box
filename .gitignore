@@ -13,5 +13,6 @@ data/
 !assets/quest_templates/**
 !assets/choice_list/**
 !docs/**
+!logo.png
 
 .recallloom/
