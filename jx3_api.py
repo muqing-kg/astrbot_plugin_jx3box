@@ -7,7 +7,6 @@ from typing import Any
 from .http_client import HttpClient
 
 NODE = "https://node.jx3box.com"
-NEXT2 = "https://next2.jx3box.com"
 ICON = "https://cdn.jx3box.com/icon/{icon_id}.png"
 ICON_FALLBACK = "https://icon.jx3box.com/icon/{icon_id}.png"
 ITEM_VIEW = "https://www.jx3box.com/item/view/{item_id}"
@@ -116,18 +115,6 @@ class Jx3Api:
         ):
             return payload
         return data if isinstance(data, dict) else {}
-
-    async def fetch_horse_reports(self, server: str, page_size: int = 50) -> list[dict[str, Any]]:
-        data = await self.http.get_json(
-            f"{NEXT2}/api/game/reporter/horse",
-            params={
-                "pageIndex": 1,
-                "pageSize": page_size,
-                "server": server,
-                "type": "horse",
-            },
-        )
-        return ((((data or {}).get("data") or {}).get("list")) or [])
 
     async def get_icon_bytes(self, icon_id: int | str) -> bytes | None:
         urls = (

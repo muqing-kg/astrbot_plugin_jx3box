@@ -79,7 +79,10 @@ def build_t2i_options(
         "viewport_width": w,
         "viewport_height": h,
         "width": w,
-        "device_scale_factor": 2,
+        # astrbot-t2i service only honors device_scale_factor_level
+        # (normal=1.0 / high=1.3 / ultra=1.8); a raw device_scale_factor key
+        # is dropped by its pydantic schema, so text would render at 1x.
+        "device_scale_factor_level": "ultra",
     }
     if base:
         opts.update(base)
