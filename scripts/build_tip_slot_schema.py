@@ -416,8 +416,8 @@ def build_schema_draft(per_family: dict[str, dict[str, Any]]) -> dict[str, Any]:
 
 
 async def crawl_search_validated(per_path: int = 3, client: str = "std") -> dict[str, Any]:
-    from astrbot_plugin_jx3box.http_client import HttpClient
-    from astrbot_plugin_jx3box.jx3_api import Jx3Api, NODE
+    from astrbot_plugin_jx3box.api.http_client import HttpClient
+    from astrbot_plugin_jx3box.api.jx3_api import Jx3Api, NODE
 
     menus = load_menus()
     http = HttpClient()

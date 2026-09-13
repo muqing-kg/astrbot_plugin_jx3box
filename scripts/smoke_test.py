@@ -13,15 +13,15 @@ import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT.parent))
 
-from astrbot_plugin_jx3box.html_util import sanitize_css_color
-from astrbot_plugin_jx3box.http_client import HttpClient
-from astrbot_plugin_jx3box.jx3_api import Jx3Api
-from astrbot_plugin_jx3box.renderers import render_help_image
-from astrbot_plugin_jx3box.tip_html import build_tip_html, build_tip_template_data
-from astrbot_plugin_jx3box.quest_html import build_quest_html
+from astrbot_plugin_jx3box.render.html_util import sanitize_css_color
+from astrbot_plugin_jx3box.api.http_client import HttpClient
+from astrbot_plugin_jx3box.api.jx3_api import Jx3Api
+from astrbot_plugin_jx3box.render.renderers import render_help_image
+from astrbot_plugin_jx3box.render.tip_html import build_tip_html, build_tip_template_data
+from astrbot_plugin_jx3box.render.quest_html import build_quest_html
 
 
 async def main() -> None:

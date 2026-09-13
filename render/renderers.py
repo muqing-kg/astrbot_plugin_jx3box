@@ -9,7 +9,7 @@ from typing import Any
 from PIL import Image, ImageDraw
 
 from .font_util import get_font
-from .jx3_api import clean_desc
+from ..api.jx3_api import clean_desc
 from .tip_html import render_item_tip as _render_item_tip_impl
 
 # ── 通用颜色 ──────────────────────────────────────────────

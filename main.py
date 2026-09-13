@@ -21,9 +21,9 @@ from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, StarTools, register
 import astrbot.api.message_components as Comp
 
-from .http_client import HttpClient
-from .jx3_api import ACH_VIEW, ITEM_VIEW, Jx3Api
-from .choice_list import (
+from .api.http_client import HttpClient
+from .api.jx3_api import ACH_VIEW, ITEM_VIEW, Jx3Api
+from .render.choice_list import (
     KIND_LABELS,
     PAGE_SIZE,
     TEXT_THRESHOLD,
@@ -35,9 +35,9 @@ from .choice_list import (
     row_icon_id,
     total_pages,
 )
-from .renderers import render_help_image
-from .tip_html import render_item_tip_html
-from .quest_html import render_quest_card_html, resolve_quest_item_meta
+from .render.renderers import render_help_image
+from .render.tip_html import render_item_tip_html
+from .render.quest_html import render_quest_card_html, resolve_quest_item_meta
 
 
 def _user_error(prefix: str = "操作失败，请稍后重试。") -> str:

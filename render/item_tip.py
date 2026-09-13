@@ -11,7 +11,7 @@ from typing import Any
 from PIL import Image, ImageDraw
 
 from .font_util import get_font
-from .jx3_api import ICON, clean_desc
+from ..api.jx3_api import ICON, clean_desc
 
 # 品质色（对齐官网 tip 实测）
 QUALITY_COLORS = {

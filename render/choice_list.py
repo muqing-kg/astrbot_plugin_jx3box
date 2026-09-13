@@ -9,7 +9,7 @@ from typing import Any
 from PIL import Image, ImageDraw, ImageFilter
 
 from .font_util import get_font
-from .jx3_api import ICON
+from ..api.jx3_api import ICON
 
 PAGE_SIZE = 100
 TEXT_THRESHOLD = 10  # 2..10 text; >=11 image

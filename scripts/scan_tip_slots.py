@@ -252,8 +252,8 @@ def load_menu_tree():
 
 
 async def crawl_more(per_sub=8, client="std"):
-    from astrbot_plugin_jx3box.http_client import HttpClient
-    from astrbot_plugin_jx3box.jx3_api import Jx3Api, NODE
+    from astrbot_plugin_jx3box.api.http_client import HttpClient
+    from astrbot_plugin_jx3box.api.jx3_api import Jx3Api, NODE
 
     http = HttpClient()
     await http.start()

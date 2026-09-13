@@ -46,18 +46,17 @@
 
 在 AstrBot 插件管理中禁用/卸载本插件即可。
 
-## 主要文件
-- choice_list.py：多结果候选列表（文字/分页图）
-- assets/choice_list/：候选列表背景
-
-- main.py：命令入口
-- jx3_api.py：魔盒接口
-- tip_html.py / quest_html.py：物品 tip / 任务卡 HTML 渲染
-- smoke_test.py：离线 HTML/API 冒烟（非 t2i 真机出图）
+## 目录结构
+- main.py：命令入口（AstrBot 要求固定在插件根目录）
+- api/：http_client（HTTP 客户端）、jx3_api（魔盒接口封装）
+- render/：choice_list（候选列表）、tip_html / item_tip（物品 tip）、quest_html（任务卡）、renderers（帮助图与文本标记）、html_util / font_util（渲染公共工具）
+- assets/：模板 CSS、候选列表背景、任务图标等资源
+- fonts/：本地字体（候选图 / 帮助图的 Pillow 渲染用）
+- scripts/：smoke_test.py 离线冒烟与资源分析脚本
 
 
 ## 渲染说明
 
 - 物品 tip / 任务卡：生产环境走 AstrBot html_render → 远端 astrbot-t2i
-- 本地 smoke_test.py 只校验 HTML 模板与 API，不替代真机出图验收
+- scripts/smoke_test.py 只校验 HTML 模板与 API，不替代真机出图验收
 - 帮助图仍为本地 Pillow 生成
